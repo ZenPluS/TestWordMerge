@@ -1,0 +1,69 @@
+﻿using System;
+using System.Collections.Generic;
+using TestWordMerge.Core;
+
+namespace TestWordMerge.Abstract
+{
+    public abstract class AbstractCouple<TLeft, TRight>
+        : ICouple<TLeft, TRight>
+    {
+        public TLeft Left { get; }
+        public TRight Right { get; }
+
+        protected AbstractCouple(TLeft left, TRight right)
+        {
+            Left = left;
+            Right = right;
+        }
+
+        public override string ToString() => $"{Left} - {Right}";
+        public override bool Equals(object obj)
+        {
+            if (obj is ICouple<TLeft, TRight> other)
+            {
+                return Equals(other);
+            }
+            return false;
+        }
+
+        protected bool Equals(AbstractCouple<TLeft, TRight> other)
+        {
+            return EqualityComparer<TLeft>.Default.Equals(Left, other.Left) && EqualityComparer<TRight>.Default.Equals(Right, other.Right);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (EqualityComparer<TLeft>.Default.GetHashCode(Left) * 397) ^ EqualityComparer<TRight>.Default.GetHashCode(Right);
+            }
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(this, obj)) return 0;
+            if (obj is ICouple<TLeft, TRight> other)
+                return CompareTo(other);
+
+            throw new ArgumentException("Object is not a compatible ICouple", nameof(obj));
+        }
+
+        public int CompareTo(ICouple<TLeft, TRight> other)
+        {
+            if (ReferenceEquals(this, other)) return 0;
+            if (other == null) return 1;
+
+            var leftCompare = Comparer<TLeft>.Default.Compare(Left, other.Left);
+            return leftCompare != 0 ? leftCompare : Comparer<TRight>.Default.Compare(Right, other.Right);
+        }
+
+        public bool Equals(ICouple<TLeft, TRight> other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other == null) return false;
+
+            return EqualityComparer<TLeft>.Default.Equals(Left, other.Left)
+                && EqualityComparer<TRight>.Default.Equals(Right, other.Right);
+        }
+    }
+}

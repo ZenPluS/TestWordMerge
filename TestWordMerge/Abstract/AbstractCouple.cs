@@ -4,7 +4,7 @@ using TestWordMerge.Core;
 
 namespace TestWordMerge.Abstract
 {
-    public abstract class AbstractCouple<TLeft, TRight>
+    public abstract partial class AbstractCouple<TLeft, TRight>
         : ICouple<TLeft, TRight>
     {
         public TLeft Left { get; }
@@ -17,25 +17,29 @@ namespace TestWordMerge.Abstract
         }
 
         public override string ToString() => $"{Left} - {Right}";
+
         public override bool Equals(object obj)
         {
             if (obj is ICouple<TLeft, TRight> other)
             {
                 return Equals(other);
             }
+
             return false;
         }
 
         protected bool Equals(AbstractCouple<TLeft, TRight> other)
         {
-            return EqualityComparer<TLeft>.Default.Equals(Left, other.Left) && EqualityComparer<TRight>.Default.Equals(Right, other.Right);
+            return EqualityComparer<TLeft>.Default.Equals(Left, other.Left) &&
+                   EqualityComparer<TRight>.Default.Equals(Right, other.Right);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return (EqualityComparer<TLeft>.Default.GetHashCode(Left) * 397) ^ EqualityComparer<TRight>.Default.GetHashCode(Right);
+                return (EqualityComparer<TLeft>.Default.GetHashCode(Left) * 397) ^
+                       EqualityComparer<TRight>.Default.GetHashCode(Right);
             }
         }
 
@@ -63,7 +67,7 @@ namespace TestWordMerge.Abstract
             if (other == null) return false;
 
             return EqualityComparer<TLeft>.Default.Equals(Left, other.Left)
-                && EqualityComparer<TRight>.Default.Equals(Right, other.Right);
+                   && EqualityComparer<TRight>.Default.Equals(Right, other.Right);
         }
     }
 }

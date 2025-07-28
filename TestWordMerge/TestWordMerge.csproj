@@ -38,7 +38,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abstract\AbstractCouple.cs" />
+    <Compile Include="Abstract\AbstractCouple_Operators.cs" />
     <Compile Include="Core\ICouple.cs" />
+    <Compile Include="Extensions\CoupleExtension.cs" />
     <Compile Include="Models\Couple.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

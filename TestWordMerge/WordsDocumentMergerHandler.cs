@@ -18,6 +18,7 @@ namespace TestWordMerge
 
         public Entity MergeDocuments(
             Entity mainDocument
+            //ToDo: Add other parameters as needed, the main annotation word document
             )
         {
 

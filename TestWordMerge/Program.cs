@@ -38,7 +38,8 @@ public class WordMerger
                 var mainBody = mainDoc.MainDocumentPart.Document.Body;
                 var insertBody = insertDoc.MainDocumentPart.Document.Body;
 
-                var placeholderParagraph = mainBody.Descendants<Paragraph>()
+                var placeholderParagraph = mainBody
+                    .Descendants<Paragraph>()
                     .FirstOrDefault(p => p.InnerText.Contains(placeholder));
 
                 if (placeholderParagraph == null)

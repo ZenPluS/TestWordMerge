@@ -1,21 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using Microsoft.Crm.Sdk.Messages;
+﻿using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using TestWordMerge.Abstract;
 using TestWordMerge.Extensions;
 using TestWordMerge.Models;
 
 namespace TestWordMerge
 {
+    /// <summary>
+    /// Handler to merge files from a source entity into a main Word file.
+    /// </summary>
     public sealed class WordsDocumentMergerHandler
+        : BaseAbstractHandler<string>
     {
         private readonly IOrganizationService _service;
         private readonly Entity _sourceEntityDocumentToInject;
         private readonly Entity _annotationMainWordFile;
         private readonly List<Couple<string, string>> _configuration;
-        private readonly Action<string> _logger;
+        private const string Header = nameof(WordsDocumentMergerHandler);
 
         public WordsDocumentMergerHandler(
             IOrganizationService service,
@@ -23,38 +27,58 @@ namespace TestWordMerge
             Entity annotationMainWordFile,
             List<Couple<string, string>> configuration,
             Action<string> logger = null)
+            : base(logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _sourceEntityDocumentToInject = sourceEntityDocumentToInject ?? throw new ArgumentNullException(nameof(sourceEntityDocumentToInject));
             _annotationMainWordFile = annotationMainWordFile ?? throw new ArgumentNullException(nameof(annotationMainWordFile));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? (message => Debug.WriteLine(message));
         }
 
         public Entity Handle()
         {
-            var allFileFields = _configuration
-                .Select(i => i.Left)
-                .ToList();
+            try
+            {
+                Logger($"{Header} - Starting to merge files from entity '{_sourceEntityDocumentToInject.LogicalName}' with ID '{_sourceEntityDocumentToInject.Id}' into main Word file.");
 
-            var allFiles = allFileFields
-                .ConvertAll(
-                    f => (Field: f, File: DownloadFile(_sourceEntityDocumentToInject.ToEntityReference(), f)))
-                .Where(
-                    i => i.File != null)
-                .ToDictionary(
-                    i => i.Field,
-                    i => i.File);
+                var allFileFields = _configuration
+                    .ConvertAll(i => i.Left);
 
-            return null;
+                var allFiles = allFileFields
+                    .ConvertAll(
+                        f => (Field: f, File: DownloadFile(_sourceEntityDocumentToInject.ToEntityReference(), f)))
+                    .Where(
+                        i => i.File != null)
+                    .ToDictionary(
+                        i => i.Field, i => i.File);
+
+                if (allFileFields.Count > allFiles.Count)
+                {
+                    Logger("Retrieved files are less than required files inside configuration - exit immediately");
+                    return null;
+                }
+
+                //ToDo: Implement the actual merging logic here.
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Logger($"{Header} - An error occurred while merging files: {e.Message}");
+                return null;
+            }
+            finally
+            {
+                Logger($"{Header} - End");
+            }
         }
 
-        /// <summary>  
-        /// Download a file from Dynamics 365 using the IOrganizationService.
-        /// </summary>  
-        /// <param name="entityReference"></param>
-        /// <param name="attributeName"></param>
-        /// <returns></returns>  
+        /// <summary>
+        /// Downloads a file field attribute from the specified entity reference
+        /// </summary>
+        /// <param name="entityReference">Entity reference</param>
+        /// <param name="attributeName">File field attribute</param>
+        /// <returns> byte array as retrieved file</returns>
         private byte[] DownloadFile(
             EntityReference entityReference,
             string attributeName)
@@ -100,7 +124,7 @@ namespace TestWordMerge
             }
             catch (Exception e)
             {
-                _logger(e.Message);
+                Logger($"An Error Occured while downloading file for field {attributeName} Exception {e.Message} - Stack {e.StackTrace}");
                 return null;
             }
         }

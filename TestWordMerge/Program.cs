@@ -5,6 +5,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using DocumentFormat.OpenXml.Drawing;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 
 public class WordMerger
 {
@@ -102,7 +104,7 @@ public class WordMerger
         mainDoc.MainDocumentPart?.ThemePart?.FeedData(insertDoc.MainDocumentPart.ThemePart.GetStream());
     }
 
-     
+
     private static Dictionary<int, int> CopyNumbering(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
     {
         var insertPart = insertDoc.MainDocumentPart?.NumberingDefinitionsPart;
@@ -135,20 +137,20 @@ public class WordMerger
         foreach (var num in insertNumbering.Elements<NumberingInstance>())
         {
             maxNumId++;
-            var oldId = num.NumberID.Value;
+            var oldId = num.NumberID?.Value ?? 0;
             var newNum = (NumberingInstance)num.CloneNode(true);
             newNum.NumberID = new Int32Value(maxNumId);
 
             // Aggiorna AbstractNumId se necessario
             var absNumId = newNum.Descendants<AbstractNumId>().FirstOrDefault();
-            if (absNumId != null && abstractNumMap.ContainsKey(absNumId.Val.Value))
-                absNumId.Val = abstractNumMap[absNumId.Val.Value];
+            if (absNumId != null && abstractNumMap.TryGetValue(absNumId.Val?.Value ?? -1, out var value))
+                absNumId.Val = value;
 
             mainNumbering.AppendChild(newNum);
             numMap[oldId] = maxNumId;
         }
 
-        mainPart.Numbering.Save();
+        mainPart?.Numbering.Save();
         return numMap;
     }
 
@@ -172,14 +174,14 @@ public class WordMerger
     // Aggiorna i riferimenti alle immagini nei nodi inseriti
     private static void UpdateImageReferences(OpenXmlElement element, Dictionary<string, string> imageMap)
     {
-        foreach (var drawing in element.Descendants<Drawing>())
+        foreach (var drawing in element.Descendants<Drawing>().ToList())
         {
-            foreach (var blip in drawing.Descendants<DocumentFormat.OpenXml.Drawing.Blip>())
+            foreach (var blip in drawing.Descendants<Blip>().ToList())
             {
                 var embed = blip.Embed?.Value;
-                if (embed != null && imageMap.ContainsKey(embed))
+                if (embed != null && imageMap.TryGetValue(embed, out var value))
                 {
-                    blip.Embed.Value = imageMap[embed];
+                    blip.Embed.Value = value;
                 }
             }
         }
@@ -191,20 +193,16 @@ public class WordMerger
         foreach (var numPr in element.Descendants<NumberingProperties>())
         {
             var numId = numPr.NumberingId;
-            if (numId != null && numberingMap.ContainsKey(numId.Val.Value))
+            if (numId != null && numberingMap.TryGetValue(numId.Val.Value, out var value))
             {
-                numId.Val = numberingMap[numId.Val.Value];
+                numId.Val = value;
             }
         }
     }
 
     public static string ReadFileAsBase64(string path)
-    {
-        return Convert.ToBase64String(File.ReadAllBytes(path));
-    }
+        => Convert.ToBase64String(File.ReadAllBytes(path));
 
     public static void WriteBase64ToFile(string base64, string path)
-    {
-        File.WriteAllBytes(path, Convert.FromBase64String(base64));
-    }
+        => File.WriteAllBytes(path, Convert.FromBase64String(base64));
 }

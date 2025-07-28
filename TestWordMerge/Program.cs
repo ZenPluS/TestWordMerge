@@ -35,8 +35,8 @@ public class WordMerger
                 var numberingMap = CopyNumbering(mainDoc, insertDoc);
                 var imageMap = CopyImages(mainDoc, insertDoc);
 
-                var mainBody = mainDoc.MainDocumentPart.Document.Body;
-                var insertBody = insertDoc.MainDocumentPart.Document.Body;
+                var mainBody = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
+                var insertBody = insertDoc.MainDocumentPart?.Document.Body ?? new Body();
 
                 var placeholderParagraph = mainBody
                     .Descendants<Paragraph>()
@@ -45,22 +45,17 @@ public class WordMerger
                 if (placeholderParagraph == null)
                     throw new InvalidOperationException("Placeholder non trovato nel documento principale.");
 
-                // Solo se il parent è Body
                 if (placeholderParagraph.Parent is Body parentBody)
                 {
                     var elements = parentBody.Elements().ToList();
                     var index = elements.IndexOf(placeholderParagraph);
-
                     placeholderParagraph.Remove();
 
                     foreach (var element in insertBody.Elements())
                     {
                         var imported = element.CloneNode(true);
-
-                        // Aggiorna riferimenti immagini e numbering
                         UpdateImageReferences(imported, imageMap);
                         UpdateNumberingReferences(imported, numberingMap);
-
                         parentBody.InsertAt(imported, index++);
                     }
                 }
@@ -69,7 +64,7 @@ public class WordMerger
                     throw new InvalidOperationException("Il placeholder non si trova nel body principale.");
                 }
 
-                mainDoc.MainDocumentPart.Document.Save();
+                mainDoc.MainDocumentPart?.Document.Save();
             }
             return Convert.ToBase64String(mainStream.ToArray());
         }
@@ -77,63 +72,59 @@ public class WordMerger
 
     private static void CopyStyles(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
     {
-        var mainStylePart = mainDoc.MainDocumentPart.StyleDefinitionsPart ?? mainDoc.MainDocumentPart.AddNewPart<StyleDefinitionsPart>();
-        var insertStylePart = insertDoc.MainDocumentPart.StyleDefinitionsPart;
+        var mainStylePart = mainDoc.MainDocumentPart?.StyleDefinitionsPart ?? mainDoc.MainDocumentPart?.AddNewPart<StyleDefinitionsPart>();
+        var insertStylePart = insertDoc.MainDocumentPart?.StyleDefinitionsPart;
 
         if (insertStylePart == null)
             return;
 
         var insertStyles = insertStylePart.Styles;
-        var mainStyles = mainStylePart.Styles ?? new Styles();
-        if (mainStylePart.Styles == null)
+        var mainStyles = mainStylePart?.Styles ?? new Styles();
+        if (mainStylePart?.Styles == null)
             mainStylePart.Styles = mainStyles;
 
-        foreach (var style in insertStyles.Elements<Style>())
+        foreach (var style in insertStyles?.Elements<Style>()?.ToList())
         {
-            // Rimuovi lo stile esistente con lo stesso StyleId (così viene sovrascritto)
             var existing = mainStyles.Elements<Style>().FirstOrDefault(s => s.StyleId == style.StyleId);
-            if (existing != null)
-                existing.Remove();
-
+            existing?.Remove();
             mainStyles.Append(style.CloneNode(true));
         }
         mainStylePart.Styles.Save();
 
-        // Copia anche il ThemePart se presente (per i colori)
-        if (insertDoc.MainDocumentPart.ThemePart != null)
-        {
-            var mainThemePart = mainDoc.MainDocumentPart.ThemePart;
-            if (mainThemePart != null)
-                mainDoc.MainDocumentPart.DeletePart(mainThemePart);
+        if (insertDoc.MainDocumentPart.ThemePart == null)
+            return;
 
-            mainDoc.MainDocumentPart.AddNewPart<ThemePart>();
-            mainDoc.MainDocumentPart.ThemePart.FeedData(insertDoc.MainDocumentPart.ThemePart.GetStream());
-        }
+        var mainThemePart = mainDoc.MainDocumentPart?.ThemePart;
+        if (mainThemePart != null)
+            mainDoc.MainDocumentPart.DeletePart(mainThemePart);
+
+        mainDoc.MainDocumentPart?.AddNewPart<ThemePart>();
+        mainDoc.MainDocumentPart?.ThemePart?.FeedData(insertDoc.MainDocumentPart.ThemePart.GetStream());
     }
 
-    // Restituisce una mappa oldNumId -> newNumId
+     
     private static Dictionary<int, int> CopyNumbering(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
     {
-        var insertPart = insertDoc.MainDocumentPart.NumberingDefinitionsPart;
+        var insertPart = insertDoc.MainDocumentPart?.NumberingDefinitionsPart;
         if (insertPart == null) return new Dictionary<int, int>();
 
-        var mainPart = mainDoc.MainDocumentPart.NumberingDefinitionsPart ?? mainDoc.MainDocumentPart.AddNewPart<NumberingDefinitionsPart>();
-        if (mainPart.Numbering == null)
-            mainPart.Numbering = new Numbering();
+        var mainPart = mainDoc.MainDocumentPart?.NumberingDefinitionsPart ?? mainDoc.MainDocumentPart?.AddNewPart<NumberingDefinitionsPart>();
 
-        var mainNumbering = mainPart.Numbering;
+        var mainNumbering = mainPart?.Numbering ?? new Numbering();
         var insertNumbering = insertPart.Numbering;
 
-        var maxAbstractNumId = mainNumbering.Elements<AbstractNum>()
-            .Select(a => a.AbstractNumberId?.Value ?? 0).DefaultIfEmpty(0).Max();
-        var maxNumId = mainNumbering.Elements<NumberingInstance>()
-            .Select(n => n.NumberID?.Value ?? 0).DefaultIfEmpty(0).Max();
+        var maxAbstractNumId = mainNumbering?.Elements<AbstractNum>()
+            .ToList()
+            .Select(a => a.AbstractNumberId?.Value ?? 0).DefaultIfEmpty(0).Max() ?? 0;
+
+        var maxNumId = mainNumbering?.Elements<NumberingInstance>()
+            .Select(n => n.NumberID?.Value ?? 0).DefaultIfEmpty(0).Max() ?? 0;
 
         var abstractNumMap = new Dictionary<int, int>();
         foreach (var abstractNum in insertNumbering.Elements<AbstractNum>())
         {
             maxAbstractNumId++;
-            var oldId = abstractNum.AbstractNumberId.Value;
+            var oldId = abstractNum.AbstractNumberId?.Value ?? 0;
             var newAbstractNum = (AbstractNum)abstractNum.CloneNode(true);
             newAbstractNum.AbstractNumberId = new Int32Value(maxAbstractNumId);
             mainNumbering.AppendChild(newAbstractNum);

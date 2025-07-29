@@ -1,9 +1,13 @@
-﻿using Microsoft.Crm.Sdk.Messages;
+﻿using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TestWordMerge.Abstract;
+using TestWordMerge.Constant;
 using TestWordMerge.Extensions;
 using TestWordMerge.Models;
 
@@ -35,6 +39,10 @@ namespace TestWordMerge
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
+        /// <summary>
+        /// Handles the merging of files from the source entity into the main Word file.
+        /// </summary>
+        /// <returns></returns>
         public Entity Handle()
         {
             try
@@ -58,19 +66,117 @@ namespace TestWordMerge
                     return null;
                 }
 
-                //ToDo: Implement the actual merging logic here.
+                var wordMainFile = _annotationMainWordFile.GetAttributeValue<string>(Annotation.AnnotationDocumentBody);
+                var mainBytes = Convert.FromBase64String(wordMainFile);
+                var check = Array.TrueForAll(_configuration.ToArray(),
+                    c =>
+                    {
+                        try
+                        {
+                            var currentFile = allFiles[c.Left];
+                            var updatedMain = MergeDocumentsBase64(
+                                mainBytes,
+                                currentFile,
+                                c
+                            );
+                            mainBytes = updatedMain;
+                            return true;
+                        }
+                        catch (Exception e)
+                        {
+                            Logger($"{Header} - An error occurred while merging file for field {c.Right} - Exception {e.Message} - Stack {e.StackTrace}");
+                            return false;
+                        }
+                    });
 
-                return null;
+                if (!check)
+                    return null;
+
+                var clonedAnnotation = _annotationMainWordFile.CloneEmpty();
+                clonedAnnotation[Annotation.AnnotationDocumentBody] = Convert.ToBase64String(mainBytes);
+
+                return clonedAnnotation;
             }
             catch (Exception e)
             {
-                Logger($"{Header} - An error occurred while merging files: {e.Message}");
+                Logger($"{Header} - An error occurred while merging files - Exception {e.Message} - Stack {e.StackTrace}");
                 return null;
             }
             finally
             {
                 Logger($"{Header} - End");
             }
+        }
+
+        /// <summary>
+        /// Merges two Word documents by replacing a placeholder in the main document with the content of the insert document.
+        /// </summary>
+        /// <param name="mainBytes"></param>
+        /// <param name="insertBytes"></param>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        internal byte[] MergeDocumentsBase64(
+            byte[] mainBytes,
+            byte[] insertBytes,
+            Couple<string, string> configuration
+            )
+        {
+            try
+            {
+                using (var mainStream = new MemoryStream())
+                using (var insertStream = new MemoryStream(insertBytes))
+                {
+                    mainStream.Write(mainBytes, 0, mainBytes.Length);
+                    mainStream.Position = 0;
+
+                    using (var mainDoc = WordprocessingDocument.Open(mainStream, true))
+                    using (var insertDoc = WordprocessingDocument.Open(insertStream, false))
+                    {
+                        WordsMergerHelper.CopyStyles(mainDoc, insertDoc);
+                        var numberingMap = WordsMergerHelper.CopyNumbering(mainDoc, insertDoc);
+                        var imageMap = WordsMergerHelper.CopyImages(mainDoc, insertDoc);
+
+                        var mainBody = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
+                        var insertBody = insertDoc.MainDocumentPart?.Document.Body ?? new Body();
+
+                        var placeholderParagraph = mainBody
+                            .Descendants<Paragraph>()
+                            .FirstOrDefault(p => p.InnerText.Contains(configuration.Right));
+
+                        if (placeholderParagraph == null)
+                            throw new InvalidOperationException("Placeholder non trovato nel documento principale.");
+
+                        if (placeholderParagraph.Parent is Body parentBody)
+                        {
+                            var elements = parentBody.Elements().ToList();
+                            var index = elements.IndexOf(placeholderParagraph);
+                            placeholderParagraph.Remove();
+
+                            foreach (var element in insertBody.Elements())
+                            {
+                                var imported = element.CloneNode(true);
+                                WordsMergerHelper.UpdateImageReferences(imported, imageMap);
+                                WordsMergerHelper.UpdateNumberingReferences(imported, numberingMap);
+                                parentBody.InsertAt(imported, index++);
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Il placeholder non si trova nel body principale.");
+                        }
+
+                        mainDoc.MainDocumentPart?.Document.Save();
+                    }
+
+                    return mainStream.ToArray();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger($"An Error Occured while merging file for field {configuration.Left} Exception {e.Message} - Stack {e.StackTrace}");
+                return null;
+            }
+
         }
 
         /// <summary>

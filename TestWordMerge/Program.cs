@@ -104,7 +104,6 @@ public class WordMerger
         mainDoc.MainDocumentPart?.ThemePart?.FeedData(insertDoc.MainDocumentPart.ThemePart.GetStream());
     }
 
-
     private static Dictionary<int, int> CopyNumbering(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
     {
         var insertPart = insertDoc.MainDocumentPart?.NumberingDefinitionsPart;
@@ -154,7 +153,6 @@ public class WordMerger
         return numMap;
     }
 
-    // Restituisce una mappa oldRelId -> newRelId
     private static Dictionary<string, string> CopyImages(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
     {
         var imageMap = new Dictionary<string, string>();
@@ -171,7 +169,6 @@ public class WordMerger
         return imageMap;
     }
 
-    // Aggiorna i riferimenti alle immagini nei nodi inseriti
     private static void UpdateImageReferences(OpenXmlElement element, Dictionary<string, string> imageMap)
     {
         foreach (var drawing in element.Descendants<Drawing>().ToList())
@@ -187,7 +184,6 @@ public class WordMerger
         }
     }
 
-    // Aggiorna i riferimenti di numberingId nei paragrafi inseriti
     private static void UpdateNumberingReferences(OpenXmlElement element, Dictionary<int, int> numberingMap)
     {
         foreach (var numPr in element.Descendants<NumberingProperties>())

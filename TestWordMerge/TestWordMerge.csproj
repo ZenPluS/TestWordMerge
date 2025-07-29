@@ -39,14 +39,18 @@
   <ItemGroup>
     <Compile Include="Abstract\AbstractCouple.cs" />
     <Compile Include="Abstract\AbstractCouple_Operators.cs" />
+    <Compile Include="Abstract\AbstractCouple_Overrides.cs" />
     <Compile Include="Abstract\BaseAbstractHandler.cs" />
+    <Compile Include="Constant\Annotation.cs" />
     <Compile Include="Core\ICouple.cs" />
     <Compile Include="Extensions\CoupleExtension.cs" />
+    <Compile Include="Extensions\EntityExtension.cs" />
     <Compile Include="Extensions\OrganizationServiceExtension.cs" />
     <Compile Include="Models\Couple.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WordsDocumentMergerHandler.cs" />
+    <Compile Include="WordsMergerHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

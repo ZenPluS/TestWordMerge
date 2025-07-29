@@ -16,31 +16,10 @@ namespace TestWordMerge.Abstract
             Right = right;
         }
 
-        public override string ToString() => $"{Left} - {Right}";
-
-        public override bool Equals(object obj)
-        {
-            if (obj is ICouple<TLeft, TRight> other)
-            {
-                return Equals(other);
-            }
-
-            return false;
-        }
-
         protected bool Equals(AbstractCouple<TLeft, TRight> other)
         {
             return EqualityComparer<TLeft>.Default.Equals(Left, other.Left) &&
                    EqualityComparer<TRight>.Default.Equals(Right, other.Right);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return (EqualityComparer<TLeft>.Default.GetHashCode(Left) * 397) ^
-                       EqualityComparer<TRight>.Default.GetHashCode(Right);
-            }
         }
 
         public int CompareTo(object obj)

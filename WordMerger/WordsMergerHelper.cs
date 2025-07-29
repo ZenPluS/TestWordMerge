@@ -129,7 +129,7 @@ namespace WordMerge
             foreach (var numPr in element.Descendants<NumberingProperties>())
             {
                 var numId = numPr.NumberingId;
-                if (numId != null && numId.Val != null && numberingMap.TryGetValue(numId.Val.Value, out var value))
+                if (numId?.Val != null && numberingMap.TryGetValue(numId.Val.Value, out var value))
                 {
                     numId.Val = value;
                 }

@@ -8,6 +8,6 @@ namespace WordMerge.Constant
 {
     internal static class Annotation
     {
-        public const string AnnotationDocumentBody = "documentbody";
+        internal const string AnnotationDocumentBody = "documentbody";
     }
 }

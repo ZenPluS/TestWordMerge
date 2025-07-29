@@ -2,9 +2,9 @@
 
 namespace WordMerge.Extensions
 {
-    public static class OrganizationServiceExtension
+    internal static class OrganizationServiceExtension
     {
-        public static TOrganizationResponse Execute<TOrganizationResponse, TOrganizationRequest>(
+        internal static TOrganizationResponse Execute<TOrganizationResponse, TOrganizationRequest>(
             this IOrganizationService service,
             TOrganizationRequest request
             )

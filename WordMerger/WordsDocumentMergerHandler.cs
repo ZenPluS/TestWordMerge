@@ -42,7 +42,7 @@ namespace WordMerge
         /// <summary>
         /// Handles the merging of files from the source entity into the main Word file.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Updated Annotation</returns>
         public Entity Handle()
         {
             try
@@ -141,10 +141,7 @@ namespace WordMerge
 
                         var placeholderParagraph = mainBody
                             .Descendants<Paragraph>()
-                            .FirstOrDefault(p => p.InnerText.Contains(configuration.Right));
-
-                        if (placeholderParagraph == null)
-                            throw new InvalidOperationException("Placeholder non trovato nel documento principale.");
+                            .FirstOrDefault(p => p.InnerText.Contains(configuration.Right)) ?? throw new InvalidOperationException("Placeholder not found int he principal document");
 
                         if (placeholderParagraph.Parent is Body parentBody)
                         {
@@ -162,7 +159,7 @@ namespace WordMerge
                         }
                         else
                         {
-                            throw new InvalidOperationException("Il placeholder non si trova nel body principale.");
+                            throw new InvalidOperationException("Placeholder not present in principal document body");
                         }
 
                         mainDoc.MainDocumentPart?.Document.Save();

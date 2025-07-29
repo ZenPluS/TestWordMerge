@@ -4,7 +4,7 @@ namespace WordMerge.Extensions
 {
     internal static class EntityExtension
     {
-        public static Entity Clone(this Entity source)
+        internal static Entity Clone(this Entity source)
         {
             var entity = new Entity(source.LogicalName);
             entity.Id = source.Id;
@@ -16,7 +16,7 @@ namespace WordMerge.Extensions
             return entity;
         }
 
-        public static Entity CloneEmpty(this Entity source)
+        internal static Entity CloneEmpty(this Entity source)
         {
             var entity = new Entity(source.LogicalName);
             entity.Id = source.Id;

@@ -43,6 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\BaseUnitTest.cs" />
+    <Compile Include="Executors\DownloadBlockExecutor.cs" />
+    <Compile Include="Executors\InitializeFileBlocksDownloadExecutor.cs" />
+    <Compile Include="Helpers\InMemoryFileStorage.cs" />
+    <Compile Include="Helpers\TestHelper.cs" />
     <Compile Include="WordMergeHandlerUnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -65,8 +69,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <None Include="Resources\Insert.docx" />
-    <None Include="Resources\Main.docx" />
+    <EmbeddedResource Include="Resources\Insert.docx" />
+    <EmbeddedResource Include="Resources\Main.docx" />
   </ItemGroup>
   <Import Project="..\WordMerger\WordMerger.projitems" Label="Shared" />
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

@@ -1,4 +1,5 @@
-﻿using UnitTestWordMerge.Base;
+﻿using WordMerge;
+using UnitTestWordMerge.Base;
 using Xunit;
 
 namespace UnitTestWordMerge
@@ -9,7 +10,15 @@ namespace UnitTestWordMerge
         [Fact]
         public void MyFirstTest()
         {
+            var wordMergeHandler = new WordsDocumentMergerHandler(
+                Service,
+                null,
+                null,
+                null,
+                message=> TracingService.Trace(message)
+                );
 
+            wordMergeHandler.Handle();
         }
     }
 }

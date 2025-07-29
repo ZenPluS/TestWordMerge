@@ -6,12 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TestWordMerge.Abstract;
-using TestWordMerge.Constant;
-using TestWordMerge.Extensions;
-using TestWordMerge.Models;
+using WordMerge.Abstract;
+using WordMerge.Constant;
+using WordMerge.Extensions;
+using WordMerge.Models;
 
-namespace TestWordMerge
+namespace WordMerge
 {
     /// <summary>
     /// Handler to merge files from a source entity into a main Word file.
@@ -115,7 +115,7 @@ namespace TestWordMerge
         /// <param name="insertBytes"></param>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        internal byte[] MergeDocumentsBase64(
+        private byte[] MergeDocumentsBase64(
             byte[] mainBytes,
             byte[] insertBytes,
             Couple<string, string> configuration

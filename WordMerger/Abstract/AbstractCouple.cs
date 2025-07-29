@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using TestWordMerge.Core;
+using WordMerge.Core;
 
-namespace TestWordMerge.Abstract
+namespace WordMerge.Abstract
 {
     public abstract partial class AbstractCouple<TLeft, TRight>
         : ICouple<TLeft, TRight>

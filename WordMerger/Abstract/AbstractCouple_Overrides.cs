@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TestWordMerge.Core;
+using WordMerge.Core;
 
-namespace TestWordMerge.Abstract
+namespace WordMerge.Abstract
 {
     public abstract partial class AbstractCouple<TLeft, TRight>
     {

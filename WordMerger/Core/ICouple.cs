@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TestWordMerge.Core
+namespace WordMerge.Core
 {
     public interface ICouple<TLeft, TRight> :
         IComparable,

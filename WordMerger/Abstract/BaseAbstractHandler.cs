@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TestWordMerge.Abstract
+namespace WordMerge.Abstract
 {
     public abstract class BaseAbstractHandler<T>
     {

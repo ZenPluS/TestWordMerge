@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TestWordMerge.Core;
-using TestWordMerge.Models;
+using WordMerge.Core;
 
-namespace TestWordMerge.Extensions
+namespace WordMerge.Extensions
 {
     public static class CoupleExtension
     {

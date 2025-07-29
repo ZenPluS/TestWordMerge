@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using TestWordMerge.Abstract;
-using TestWordMerge.Core;
+using WordMerge.Core;
+using WordMerge.Abstract;
 
-namespace TestWordMerge.Models
+namespace WordMerge.Models
 {
     public class Couple<TLeft, TRight>
         : AbstractCouple<TLeft, TRight>

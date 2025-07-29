@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TestWordMerge.Constant
+namespace WordMerge.Constant
 {
     internal static class Annotation
     {

@@ -26,8 +26,8 @@ namespace UnitTestWordMerge.Executors
                 {
                     { "FileContinuationToken", Guid.Empty.ToString() },
                     { "FileName", "Insert.docx" },
-                    { "FileSize", fileContent.Length }
-                }
+                    { "FileSizeInBytes", fileContent.Length },
+                },
             };
         }
 

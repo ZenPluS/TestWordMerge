@@ -44,7 +44,7 @@ namespace UnitTestWordMerge.Base
             };
 
 
-            InMemoryFileStorage.AddFile(FileId, insertFile);
+            InMemoryFileStorage.AddFile(Guid.Empty, insertFile);
 
             MainFileId = Guid.NewGuid();
             var annotationEntity = new Entity()

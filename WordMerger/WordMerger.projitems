@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>d02fe2c6-f875-4d24-81cc-4012dff67ce5</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>WordMerger</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Operators.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Overrides.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstract\BaseAbstractHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constant\Annotation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\CoupleExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Couple.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Program.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WordsDocumentMergerHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WordsMergerHelper.cs" />
+  </ItemGroup>
+</Project>

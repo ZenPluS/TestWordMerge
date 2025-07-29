@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36301.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWordMerge", "TestWordMerge\TestWordMerge.csproj", "{49A3D7AA-AB70-420E-8128-3E86D1F9BE40}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestWordMerge", "UnitTestWordMerge\UnitTestWordMerge.csproj", "{4DD83991-A471-446D-B9E4-0879592F1329}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WordMerger", "WordMerger\WordMerger.shproj", "{D02FE2C6-F875-4D24-81CC-4012DFF67CE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{49A3D7AA-AB70-420E-8128-3E86D1F9BE40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{49A3D7AA-AB70-420E-8128-3E86D1F9BE40}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{49A3D7AA-AB70-420E-8128-3E86D1F9BE40}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{49A3D7AA-AB70-420E-8128-3E86D1F9BE40}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4DD83991-A471-446D-B9E4-0879592F1329}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4DD83991-A471-446D-B9E4-0879592F1329}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DD83991-A471-446D-B9E4-0879592F1329}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,5 +23,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ECDB908D-4B59-49BF-B414-D5DC4CBEE469}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		WordMerger\WordMerger.projitems*{4dd83991-a471-446d-b9e4-0879592f1329}*SharedItemsImports = 4
+		WordMerger\WordMerger.projitems*{d02fe2c6-f875-4d24-81cc-4012dff67ce5}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

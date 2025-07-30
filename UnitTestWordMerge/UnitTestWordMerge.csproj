@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\BaseUnitTest.cs" />
+    <Compile Include="CoupleUnitTests.cs" />
     <Compile Include="Executors\DownloadBlockExecutor.cs" />
     <Compile Include="Executors\InitializeFileBlocksDownloadExecutor.cs" />
     <Compile Include="Helpers\InMemoryFileStorage.cs" />

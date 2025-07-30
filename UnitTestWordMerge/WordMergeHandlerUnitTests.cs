@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
-using Microsoft.Xrm.Sdk;
 using UnitTestWordMerge.Base;
 using UnitTestWordMerge.Helpers;
 using WordMerge;
@@ -13,7 +11,7 @@ namespace UnitTestWordMerge
         : BaseUnitTest
     {
         [Fact]
-        public void MyFirstTest()
+        public void MergeWordFileInFieldIntoAnotherFileAsAnnotation()
         {
             var file = Context.GetEntityById("incident", FileId);
             var annotation = Context.GetEntityById("annotation", MainFileId);

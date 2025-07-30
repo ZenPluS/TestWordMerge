@@ -19,7 +19,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Couple.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Program.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WordsDocumentMergerHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WordsMergerHelper.cs" />
   </ItemGroup>

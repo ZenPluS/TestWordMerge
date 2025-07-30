@@ -7,6 +7,7 @@ using FakeXrmEasy.Abstractions;
 using FakeXrmEasy.Abstractions.FakeMessageExecutors;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
+using UnitTestWordMerge.Helpers;
 
 namespace UnitTestWordMerge.Executors
 {
@@ -19,7 +20,7 @@ namespace UnitTestWordMerge.Executors
         {
             var req = (DownloadBlockRequest)request;
 
-            var data = Enumerable.Repeat((byte)0x42, (int)req.BlockLength).ToArray();
+            var data = InMemoryFileStorage.GetFile(Guid.Empty);
 
             return new DownloadBlockResponse
             {

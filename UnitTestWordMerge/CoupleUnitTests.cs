@@ -68,5 +68,23 @@ namespace UnitTestWordMerge
             Assert.Equal(1, kvp.Key);
             Assert.Equal("A", kvp.Value);
         }
+
+        [Fact]
+        public void Handles_NullValues_Correctly()
+        {
+            var couple1 = new Couple<string, string>(null, "B");
+            var couple2 = new Couple<string, string>("A", null);
+            var couple3 = new Couple<string, string>(null, null);
+
+            Assert.Equal(" - B", couple1.ToString());
+            Assert.Equal("A - ", couple2.ToString());
+            Assert.Equal(" - ", couple3.ToString());
+
+            // Equality checks
+            var couple4 = new Couple<string, string>(null, null);
+            Assert.True(couple3.Equals(couple4));
+            Assert.True(couple3 == couple4);
+            Assert.Equal(couple3.GetHashCode(), couple4.GetHashCode());
+        }
     }
 }

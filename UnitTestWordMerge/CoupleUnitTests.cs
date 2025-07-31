@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using DocumentFormat.OpenXml.Bibliography;
 using WordMerge.Models;
 using Xunit;
 
@@ -85,6 +88,51 @@ namespace UnitTestWordMerge
             Assert.True(couple3.Equals(couple4));
             Assert.True(couple3 == couple4);
             Assert.Equal(couple3.GetHashCode(), couple4.GetHashCode());
+        }
+
+        [Fact]
+        public void IStructuralEquatable_Equals_UsesCustomComparer()
+        {
+            var c1 = new Couple<string, string>("a", "b");
+            var c2 = new Couple<string, string>("A", "B");
+            var comparer = StringComparer.OrdinalIgnoreCase;
+
+            IStructuralEquatable structural = c1;
+            Assert.True(structural.Equals(c2, comparer));
+        }
+
+        [Fact]
+        public void IStructuralEquatable_GetHashCode_UsesCustomComparer()
+        {
+            var c1 = new Couple<string, string>("a", "b");
+            var c2 = new Couple<string, string>("A", "B");
+            var comparer = StringComparer.OrdinalIgnoreCase;
+
+            IStructuralEquatable structural = c1;
+            Assert.Equal(structural.GetHashCode(comparer), c2.GetHashCode(comparer));
+        }
+
+        [Fact]
+        public void IStructuralComparable_CompareTo_UsesCustomComparer()
+        {
+            var c1 = new Couple<string, string>("a", "b");
+            var c2 = new Couple<string, string>("A", "c");
+            var comparer = StringComparer.OrdinalIgnoreCase;
+
+            IStructuralComparable structural = c1;
+            Assert.True(structural.CompareTo(c2, comparer) < 0);
+        }
+
+        [Fact]
+        public void ITuple_IndexerAndLength_WorkCorrectly()
+        {
+            var c = new Couple<int, string>(42, "foo");
+            ITuple tuple = c;
+
+            Assert.Equal(2, tuple.Length);
+            Assert.Equal(42, tuple[0]);
+            Assert.Equal("foo", tuple[1]);
+            Assert.Throws<IndexOutOfRangeException>(() => tuple[2]);
         }
     }
 }

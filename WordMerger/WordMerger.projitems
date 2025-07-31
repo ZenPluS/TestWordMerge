@@ -20,6 +20,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Couple.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WordsDocumentMergerHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)WordsMergerHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\WordsMergerHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />
   </ItemGroup>
 </Project>

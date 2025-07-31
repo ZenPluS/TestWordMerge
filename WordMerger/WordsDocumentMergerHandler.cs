@@ -9,6 +9,7 @@ using System.Linq;
 using WordMerge.Abstract;
 using WordMerge.Constant;
 using WordMerge.Extensions;
+using WordMerge.Helpers;
 using WordMerge.Models;
 
 namespace WordMerge
@@ -40,10 +41,10 @@ namespace WordMerge
         }
 
         /// <summary>
-        /// Handles the merging of files from the source entity into the main Word file.
+        /// Handles the merging of Word files from the source entity into the main Word file.
         /// </summary>
         /// <returns>Updated Annotation</returns>
-        public Entity Handle()
+        public Entity WordDocumentsIntoWordHandle()
         {
             try
             {
@@ -74,12 +75,12 @@ namespace WordMerge
                         try
                         {
                             var currentFile = allFiles[c.Left];
-                            var updatedMain = MergeDocumentsBase64(
+                            mainBytes = MergeDocumentsBase64(
                                 mainBytes,
                                 currentFile,
                                 c
                             );
-                            mainBytes = updatedMain;
+
                             return true;
                         }
                         catch (Exception e)

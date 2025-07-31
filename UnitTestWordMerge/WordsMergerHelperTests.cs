@@ -3,7 +3,7 @@ using DocumentFormat.OpenXml.Packaging;
 using System.Collections.Generic;
 using System.IO;
 using DocumentFormat.OpenXml.Wordprocessing;
-using WordMerge;
+using WordMerge.Helpers;
 using Xunit;
 
 namespace UnitTestWordMerge

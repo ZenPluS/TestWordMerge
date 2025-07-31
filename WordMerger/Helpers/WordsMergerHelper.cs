@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DocumentFormat.OpenXml.Drawing;
 
-namespace WordMerge
+namespace WordMerge.Helpers
 {
     internal static class WordsMergerHelper
     {

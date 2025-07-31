@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using WordMerge.Core;
-using WordMerge.Abstract;
+﻿using WordMerge.Abstract;
 
 namespace WordMerge.Models
 {

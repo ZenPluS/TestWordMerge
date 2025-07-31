@@ -30,7 +30,7 @@ namespace UnitTestWordMerge
                 message => TracingService.Trace(message)
                 );
 
-            var resultAnnotation = wordMergeHandler.Handle();
+            var resultAnnotation = wordMergeHandler.WordDocumentsIntoWordHandle();
 
             var bas64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
             var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Merged.docx");

@@ -37,6 +37,42 @@ namespace UnitTestWordMerge
             TestHelper.CreateFile(bas64Body, filePath);
         }
 
+        //Da testare
+        [Fact]
+        public void MergeExcelFileInFieldIntoWordFileAsAnnotation()
+        {
+            // Arrange: recupera l'entità sorgente (con file Excel) e l'annotazione Word principale
+            var file = Context.GetEntityById("incident", FileId); // L'entità che contiene il file Excel
+            var annotation = Context.GetEntityById("annotation", MainFileId); // L'annotazione Word principale
+
+            // Scegli il campo che contiene il file Excel e il placeholder da sostituire
+            string excelField = "new_excel_file"; // Sostituisci con il nome effettivo del campo file Excel
+            string placeholder = "<<EXCEL_PLACEHOLDER>>"; // Sostituisci con il placeholder effettivo nel Word
+
+            var wordMergeHandler = new WordsDocumentMergerHandler(
+                Service,
+                file,
+                annotation,
+                Conf,
+                message => TracingService.Trace(message)
+            );
+
+            // Act: esegui la fusione
+            var resultAnnotation = wordMergeHandler.ExcelDocumentsIntoWordHandle(excelField, placeholder);
+
+            // Assert: verifica che il risultato non sia nullo e che il corpo del documento sia presente
+            Assert.NotNull(resultAnnotation);
+            var base64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
+            Assert.False(string.IsNullOrEmpty(base64Body));
+
+            // Salva il file risultante per ispezione manuale
+            var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MergedExcel.docx");
+            TestHelper.CreateFile(base64Body, filePath);
+
+            // (Opzionale) Potresti aggiungere controlli sul contenuto del file Word risultante,
+            // ad esempio verificando che il placeholder non sia più presente e che la tabella sia stata inserita.
+        }
+
         [Fact]
         public void Constructor_ThrowsArgumentNullException_WhenServiceIsNull()
         {

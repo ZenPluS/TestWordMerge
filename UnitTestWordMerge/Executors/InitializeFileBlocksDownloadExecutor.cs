@@ -13,13 +13,14 @@ namespace UnitTestWordMerge.Executors
 
         public OrganizationResponse Execute(OrganizationRequest request, IXrmFakedContext ctx)
         {
-            var fileContent = InMemoryFileStorage.GetFile(Guid.Empty) ?? throw new InvalidPluginExecutionException($"File not found for ID {Guid.Empty}");
+            var fileWordId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            var fileContent = InMemoryFileStorage.GetFile(fileWordId) ?? throw new InvalidPluginExecutionException($"File not found for ID {fileWordId}");
 
             return new InitializeFileBlocksDownloadResponse
             {
                 Results =
                 {
-                    { "FileContinuationToken", Guid.Empty.ToString() },
+                    { "FileContinuationToken", fileWordId.ToString() },
                     { "FileName", "Insert.docx" },
                     { "FileSizeInBytes", (long)fileContent.Length },
                 },

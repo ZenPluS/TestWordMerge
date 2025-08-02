@@ -9,14 +9,22 @@ namespace UnitTestWordMerge.Executors
 {
     public class DownloadBlockExecutor : IFakeMessageExecutor
     {
+        private readonly Func<Guid> _idResolver;
+        public DownloadBlockExecutor(Func<Guid> idResolver)
+        {
+            _idResolver = idResolver;
+        }
+
         public bool CanExecute(OrganizationRequest request)
             => request is DownloadBlockRequest;
 
-        public OrganizationResponse Execute(OrganizationRequest request, IXrmFakedContext ctx)
+        public OrganizationResponse Execute(OrganizationRequest request,IXrmFakedContext ctx)
         {
             var req = (DownloadBlockRequest)request;
 
-            var data = InMemoryFileStorage.GetFile(Guid.Empty);
+
+
+            var data = InMemoryFileStorage.GetFile(_idResolver());
 
             return new DownloadBlockResponse
             {

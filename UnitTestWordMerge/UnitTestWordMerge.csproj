@@ -69,7 +69,9 @@
       <Version>2.9.3</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Insert.xlsx" />
+  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Insert.docx" />
     <EmbeddedResource Include="Resources\Main.docx" />

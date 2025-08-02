@@ -1,4 +1,6 @@
-﻿using WordMerge.Core;
+﻿using System;
+using System.Dynamic;
+using WordMerge.Core;
 
 namespace WordMerge.Abstract
 {

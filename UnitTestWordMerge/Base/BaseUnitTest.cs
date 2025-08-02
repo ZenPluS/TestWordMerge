@@ -21,29 +21,51 @@ namespace UnitTestWordMerge.Base
         protected readonly IXrmFakedContext Context;
         protected readonly IOrganizationService Service;
         protected readonly ITracingService TracingService;
-        protected readonly List<Couple<string, string>> Conf;
-        protected readonly Guid FileId;
+        protected readonly List<Couple<string, string>> ConfWord;
+        protected readonly List<Couple<string, string>> ConfExcel;
+        protected readonly Guid FileIdWord;
+        protected readonly Guid FileIdExcel;
         protected readonly Guid MainFileId;
+        protected bool IsExcelExecution;
 
         public BaseUnitTest()
         {
-            var insertFile = TestHelper.ReadFully(TestHelper.GetEmbeddedResourceStream("UnitTestWordMerge.Resources.Insert.docx"));
+            var insertWordFile = TestHelper.ReadFully(TestHelper.GetEmbeddedResourceStream("UnitTestWordMerge.Resources.Insert.docx"));
+            var insertExcelFile = TestHelper.ReadFully(TestHelper.GetEmbeddedResourceStream("UnitTestWordMerge.Resources.Insert.xlsx"));
             var mainFile = TestHelper.ReadFully(TestHelper.GetEmbeddedResourceStream("UnitTestWordMerge.Resources.Main.docx"));
-            Conf = new List<Couple<string, string>>
+
+            var fakeWordFileId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            var fakeExcelFileId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+
+            ConfWord = new List<Couple<string, string>>
             {
                 new Couple<string, string>("dev_fileid", "<<CONTENT>>")
             };
 
-            FileId = Guid.NewGuid();
-            var fileEntity = new Entity
+            ConfExcel = new List<Couple<string, string>>
             {
-                ["dev_fileid"] = Guid.Empty,
-                Id = FileId,
+                new Couple<string, string>("dev_fileid", "<<CONTENT>>")
+            };
+
+            FileIdWord = Guid.NewGuid();
+            var fileWordEntity = new Entity
+            {
+                ["dev_fileid"] = fakeWordFileId,
+                Id = FileIdWord,
                 LogicalName = "incident"
             };
 
+            FileIdExcel = Guid.NewGuid();
+            var fileExcelEntity = new Entity
+            {
+                ["dev_fileid"] = fakeExcelFileId,
+                Id = FileIdExcel,
+                LogicalName = "task"
+            };
 
-            InMemoryFileStorage.AddFile(Guid.Empty, insertFile);
+
+            InMemoryFileStorage.AddFile(fakeWordFileId, insertWordFile);
+            InMemoryFileStorage.AddFile(fakeExcelFileId, insertExcelFile);
 
             MainFileId = Guid.NewGuid();
             var annotationEntity = new Entity()
@@ -61,28 +83,34 @@ namespace UnitTestWordMerge.Base
                 .AddPipelineSimulation()
                 .UsePipelineSimulation()
                 .AddFakeMessageExecutor<InitializeFileBlocksDownloadRequest>(new InitializeFileBlocksDownloadExecutor())
-                .AddFakeMessageExecutor<DownloadBlockRequest>(new DownloadBlockExecutor())
+                .AddFakeMessageExecutor<DownloadBlockRequest>(new DownloadBlockExecutor(() => IsExcelExecution ? fakeExcelFileId : fakeWordFileId))
                 .UseCrud()
                 .UseMessages()
                 .SetLicense(FakeXrmEasyLicense.NonCommercial)
                 .Build();
 
-            context.Initialize(new [] { fileEntity, annotationEntity });
+            context.Initialize(new[] { fileWordEntity, fileExcelEntity, annotationEntity });
 
             var entityMetadataAnnotation = new EntityMetadata();
-            entityMetadataAnnotation.LogicalName = "dio";
+            entityMetadataAnnotation.LogicalName = "a";
             var attributeAnnotation = new StringAttributeMetadata() { LogicalName = "annotation" };
             entityMetadataAnnotation.SetAttribute(attributeAnnotation);
 
             var entityMetadataIncident = new EntityMetadata();
-            entityMetadataIncident.LogicalName = "cristo";
+            entityMetadataIncident.LogicalName = "b";
             var attributeIncident = new StringAttributeMetadata() { LogicalName = "incident" };
             entityMetadataIncident.SetAttribute(attributeIncident);
+
+            var entityMetadataTask = new EntityMetadata();
+            entityMetadataTask.LogicalName = "c";
+            var attributeTask = new StringAttributeMetadata() { LogicalName = "task" };
+            entityMetadataTask.SetAttribute(attributeTask);
 
             context.InitializeMetadata(new List<EntityMetadata>()
             {
                 entityMetadataAnnotation,
-                entityMetadataIncident
+                entityMetadataIncident,
+                entityMetadataTask
             });
 
             Context = context;

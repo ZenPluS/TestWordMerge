@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Microsoft.Xrm.Sdk.Query;
 using UnitTestWordMerge.Base;
 using UnitTestWordMerge.Helpers;
@@ -105,7 +106,6 @@ namespace UnitTestWordMerge
         }
     }
 
-    // Dummy implementation for testing purposes
     public class FakeOrganizationService : IOrganizationService
     {
         public Guid Create(Entity entity) => Guid.NewGuid();

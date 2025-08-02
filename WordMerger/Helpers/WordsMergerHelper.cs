@@ -28,6 +28,7 @@ using TableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
 using TableCellProperties = DocumentFormat.OpenXml.Wordprocessing.TableCellProperties;
 using TableProperties = DocumentFormat.OpenXml.Wordprocessing.TableProperties;
 using TableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
+using TableStyle = DocumentFormat.OpenXml.Wordprocessing.TableStyle;
 
 namespace WordMerge.Helpers
 {
@@ -165,13 +166,15 @@ namespace WordMerge.Helpers
             using (var excelStream = new MemoryStream(excelBytes))
             using (var spreadsheet = SpreadsheetDocument.Open(excelStream, false))
             {
-                var sheet = spreadsheet.WorkbookPart.Workbook.Sheets.Elements<Sheet>().First();
-                var worksheetPart = (WorksheetPart)spreadsheet.WorkbookPart.GetPartById(sheet.Id);
-                var rows = worksheetPart.Worksheet.Descendants<Row>();
+                var sheet = spreadsheet.WorkbookPart?.Workbook.Sheets?.Elements<Sheet>().First();
+                var worksheetPart = (WorksheetPart)spreadsheet.WorkbookPart?.GetPartById(sheet?.Id ?? string.Empty);
+                var tableDefPart = worksheetPart?.TableDefinitionParts.FirstOrDefault();
+                string excelTableStyle = null;
+                if (tableDefPart?.Table.TableStyleInfo != null)
+                    excelTableStyle = tableDefPart.Table.TableStyleInfo.Name?.Value;
 
+                var rows = worksheetPart?.Worksheet.Descendants<Row>();
                 var table = new Table();
-
-                // Applica bordi a tutta la tabella
                 var tableProperties = new TableProperties(
                     new TableBorders(
                         new TopBorder { Val = BorderValues.Single, Size = 4 },
@@ -182,9 +185,13 @@ namespace WordMerge.Helpers
                         new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
                     )
                 );
+
+                if (!string.IsNullOrEmpty(excelTableStyle))
+                    tableProperties.Append(new TableStyle { Val = excelTableStyle });
+
                 table.AppendChild(tableProperties);
 
-                foreach (var row in rows)
+                foreach (var row in rows ?? new List<Row>())
                 {
                     var tableRow = new TableRow();
                     foreach (var cell in row.Elements<Cell>())
@@ -234,45 +241,56 @@ namespace WordMerge.Helpers
         // Ottieni il formato della cella (CellFormat) da Stylesheet
         internal static  CellFormat GetCellFormat(SpreadsheetDocument doc, Cell cell)
         {
-            if (cell.StyleIndex == null) return null;
+            if (cell.StyleIndex == null)
+                return null;
+
             var styleIndex = (int)cell.StyleIndex.Value;
-            var stylesheet = doc.WorkbookPart.WorkbookStylesPart?.Stylesheet;
-            if (stylesheet == null) return null;
-            return stylesheet.CellFormats?.ElementAt(styleIndex) as CellFormat;
+            var stylesheet = doc.WorkbookPart?.WorkbookStylesPart?.Stylesheet;
+
+            return stylesheet?.CellFormats?.ElementAt(styleIndex) as CellFormat;
         }
 
-        // Estrae le proprietà di stile dalla cella Excel
-        internal static  (string bgColor, string fontName, int fontSize, bool bold, bool italic, string fontColor) GetCellStyle(SpreadsheetDocument doc, CellFormat cellFormat)
+        internal static (string bgColor, string fontName, int fontSize, bool bold, bool italic, string fontColor) GetCellStyle(SpreadsheetDocument doc, CellFormat cellFormat)
         {
-            string bgColor = null, fontName = null, fontColor = null;
-            int fontSize = 0;
-            bool bold = false, italic = false;
+            string bgColor = null;
+            var fontSize = 0;
 
-            var stylesheet = doc.WorkbookPart.WorkbookStylesPart?.Stylesheet;
-            if (cellFormat != null && stylesheet != null)
+            var stylesheet = doc.WorkbookPart?.WorkbookStylesPart?.Stylesheet;
+            if (cellFormat == null || stylesheet == null)
+                return (null, null, fontSize, false, false, null);
+
+            if (cellFormat.FillId != null && stylesheet.Fills != null)
             {
-                // Background color
-                if (cellFormat.FillId != null && stylesheet.Fills != null)
+                var fill = stylesheet.Fills.ElementAt((int)cellFormat.FillId.Value) as Fill;
+                var patternFill = fill?.PatternFill;
+                if (patternFill != null)
                 {
-                    var fill = stylesheet.Fills.ElementAt((int)cellFormat.FillId.Value) as Fill;
-                    var patternFill = fill?.PatternFill;
-                    if (patternFill?.ForegroundColor != null)
-                        bgColor = patternFill.ForegroundColor.Rgb?.Value?.Substring(2); // Rimuove "FF" alpha
-                    else if (patternFill?.BackgroundColor != null)
-                        bgColor = patternFill.BackgroundColor.Rgb?.Value?.Substring(2);
+                    if (patternFill.PatternType == null || patternFill.PatternType.Value != PatternValues.None)
+                    {
+                        if (patternFill.ForegroundColor != null && !string.IsNullOrEmpty(patternFill.ForegroundColor.Rgb?.Value))
+                            bgColor = patternFill.ForegroundColor.Rgb.Value;
+                        else if (patternFill.BackgroundColor != null && !string.IsNullOrEmpty(patternFill.BackgroundColor.Rgb?.Value))
+                            bgColor = patternFill.BackgroundColor.Rgb.Value;
+                    }
                 }
-
-                // Font
-                if (cellFormat.FontId != null && stylesheet.Fonts != null)
-                {
-                    var font = stylesheet.Fonts.ElementAt((int)cellFormat.FontId.Value) as Font;
-                    fontName = font?.FontName?.Val;
-                    fontSize = font?.FontSize != null ? (int)font.FontSize.Val.Value : 0;
-                    bold = font?.Bold != null;
-                    italic = font?.Italic != null;
-                    fontColor = font?.Color?.Rgb?.Value?.Substring(2); // Rimuove "FF" alpha
-                }
+                if (!string.IsNullOrEmpty(bgColor) && bgColor.Length == 8)
+                    bgColor = bgColor.Substring(2);
             }
+
+            if (cellFormat.FontId == null || stylesheet.Fonts == null)
+                return (bgColor, null, fontSize, false, false, null);
+
+            var font = stylesheet.Fonts.ElementAt((int) cellFormat.FontId.Value) as Font;
+            string fontName = font?.FontName?.Val;
+            fontSize = font?.FontSize != null ? (int)font.FontSize.Val.Value : 0;
+            var bold = font?.Bold != null;
+            var italic = font?.Italic != null;
+            if (font?.Color == null || string.IsNullOrEmpty(font.Color.Rgb?.Value))
+                return (bgColor, fontName, fontSize, bold, italic, null);
+
+            var fontColor = font.Color.Rgb.Value;
+            if (fontColor.Length == 8)
+                fontColor = fontColor.Substring(2);
             return (bgColor, fontName, fontSize, bold, italic, fontColor);
         }
 
@@ -285,8 +303,8 @@ namespace WordMerge.Helpers
             if (cell.DataType == null || cell.DataType.Value != CellValues.SharedString)
                 return value;
 
-            var stringTable = document.WorkbookPart.SharedStringTablePart.SharedStringTable;
-            return stringTable.ElementAt(int.Parse(value)).InnerText;
+            var stringTable = document.WorkbookPart?.SharedStringTablePart?.SharedStringTable;
+            return stringTable?.ElementAt(int.Parse(value)).InnerText;
         }
     }
 }

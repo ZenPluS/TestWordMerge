@@ -29,6 +29,7 @@ namespace UnitTestWordMerge
                 file,
                 annotation,
                 ConfWord,
+                null,
                 message => TracingService.Trace(message)
                 );
 
@@ -51,6 +52,7 @@ namespace UnitTestWordMerge
                 file,
                 annotation,
                 ConfExcel,
+                null,
                 message => TracingService.Trace(message)
             );
 
@@ -69,7 +71,7 @@ namespace UnitTestWordMerge
             var config = new List<Couple<string, string>>();
 
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(null, entity, annotation, config));
+                new WordsDocumentMergerHandler(null, entity, annotation, config, null));
         }
 
         [Fact]
@@ -80,7 +82,7 @@ namespace UnitTestWordMerge
             var config = new List<Couple<string, string>>();
 
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(service, null, annotation, config));
+                new WordsDocumentMergerHandler(service, null, annotation, config, null));
         }
 
         [Fact]
@@ -91,7 +93,7 @@ namespace UnitTestWordMerge
             var config = new List<Couple<string, string>>();
 
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(service, entity, null, config));
+                new WordsDocumentMergerHandler(service, entity, null, config, null));
         }
 
         [Fact]
@@ -102,7 +104,7 @@ namespace UnitTestWordMerge
             var annotation = new Entity("annotation");
 
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(service, entity, annotation, null));
+                new WordsDocumentMergerHandler(service, entity, annotation, null, null));
         }
     }
 

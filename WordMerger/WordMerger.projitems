@@ -15,9 +15,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\BaseAbstractHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constant\Annotation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)core\IFileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CoupleExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)helpers\FileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Couple.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WordsDocumentMergerHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\WordsMergerHelper.cs" />

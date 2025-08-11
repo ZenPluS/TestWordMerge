@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using Microsoft.Xrm.Sdk.Query;
 using UnitTestWordMerge.Base;
 using UnitTestWordMerge.Helpers;
@@ -33,7 +32,7 @@ namespace UnitTestWordMerge
                 message => TracingService.Trace(message)
                 );
 
-            var resultAnnotation = wordMergeHandler.WordDocumentsIntoWordHandle();
+            var resultAnnotation = wordMergeHandler.FileDocumentsIntoWordHandle();
 
             var bas64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
             var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MergedWordWithWord.docx");
@@ -56,7 +55,7 @@ namespace UnitTestWordMerge
                 message => TracingService.Trace(message)
             );
 
-            var resultAnnotation = wordMergeHandler.ExcelDocumentsIntoWordHandle();
+            var resultAnnotation = wordMergeHandler.FileDocumentsIntoWordHandle();
 
             var bas64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
             var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MergedWordWithExcel.docx");

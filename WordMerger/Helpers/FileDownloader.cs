@@ -1,7 +1,9 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using WordMerge.Constant;
 using WordMerge.Extensions;
 
 namespace WordMerge.Helpers
@@ -13,8 +15,9 @@ namespace WordMerge.Helpers
         public FileDownloader(IOrganizationService service)
             => _service = service;
 
-        public byte[] DownloadFile(Action<string> logger, EntityReference entityReference, string attributeName)
+        public byte[] DownloadFile(Action<string> logger, EntityReference entityReference, string attributeName, out bool isExcel)
         {
+            isExcel = false;
             try
             {
                 var initializeFileBlocksDownloadRequest = new InitializeFileBlocksDownloadRequest
@@ -30,6 +33,8 @@ namespace WordMerge.Helpers
                 var fileContinuationToken = initializeFileBlocksDownloadResponse.FileContinuationToken;
                 var fileSizeInBytes = initializeFileBlocksDownloadResponse.FileSizeInBytes;
                 var fileBytes = new List<byte>((int)fileSizeInBytes);
+
+                isExcel = Regex.IsMatch(initializeFileBlocksDownloadResponse.FileName, RegexPatterns.ExcelPattern, RegexOptions.IgnoreCase);
 
                 long offset = 0;
                 var blockSizeDownload = !initializeFileBlocksDownloadResponse.IsChunkingSupported
@@ -59,8 +64,7 @@ namespace WordMerge.Helpers
             }
             catch (Exception e)
             {
-                logger(
-                    $"An Error Occured while downloading file for field {attributeName} Exception {e.Message} - Stack {e.StackTrace}");
+                logger($"An Error Occured while downloading file for field {attributeName} Exception {e.Message} - Stack {e.StackTrace}");
                 return null;
             }
         }

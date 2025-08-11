@@ -9,19 +9,24 @@ namespace UnitTestWordMerge.Executors
 {
     public class InitializeFileBlocksDownloadExecutor : IFakeMessageExecutor
     {
+        private readonly Func<Guid> _idResolver;
+        public InitializeFileBlocksDownloadExecutor(Func<Guid> idResolver)
+        {
+            _idResolver = idResolver;
+        }
         public bool CanExecute(OrganizationRequest request) => request is InitializeFileBlocksDownloadRequest;
 
         public OrganizationResponse Execute(OrganizationRequest request, IXrmFakedContext ctx)
         {
-            var fileWordId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-            var fileContent = InMemoryFileStorage.GetFile(fileWordId) ?? throw new InvalidPluginExecutionException($"File not found for ID {fileWordId}");
+            var fileId = _idResolver();
+            var fileContent = InMemoryFileStorage.GetFileWithContext(fileId, out var fileName) ?? throw new InvalidPluginExecutionException($"File not found for ID {fileId}");
 
             return new InitializeFileBlocksDownloadResponse
             {
                 Results =
                 {
-                    { "FileContinuationToken", fileWordId.ToString() },
-                    { "FileName", "Insert.docx" },
+                    { "FileContinuationToken", fileId.ToString() },
+                    { "FileName", fileName },
                     { "FileSizeInBytes", (long)fileContent.Length },
                 },
             };

@@ -64,8 +64,8 @@ namespace UnitTestWordMerge.Base
             };
 
 
-            InMemoryFileStorage.AddFile(fakeWordFileId, insertWordFile);
-            InMemoryFileStorage.AddFile(fakeExcelFileId, insertExcelFile);
+            InMemoryFileStorage.AddFileWithContext(fakeWordFileId, insertWordFile, "Insert.docx");
+            InMemoryFileStorage.AddFileWithContext(fakeExcelFileId, insertExcelFile, "Insert.xlsx");
 
             MainFileId = Guid.NewGuid();
             var annotationEntity = new Entity()
@@ -82,7 +82,7 @@ namespace UnitTestWordMerge.Base
                 .AddCrud()
                 .AddPipelineSimulation()
                 .UsePipelineSimulation()
-                .AddFakeMessageExecutor<InitializeFileBlocksDownloadRequest>(new InitializeFileBlocksDownloadExecutor())
+                .AddFakeMessageExecutor<InitializeFileBlocksDownloadRequest>(new InitializeFileBlocksDownloadExecutor(() => IsExcelExecution ? fakeExcelFileId : fakeWordFileId))
                 .AddFakeMessageExecutor<DownloadBlockRequest>(new DownloadBlockExecutor(() => IsExcelExecution ? fakeExcelFileId : fakeWordFileId))
                 .UseCrud()
                 .UseMessages()

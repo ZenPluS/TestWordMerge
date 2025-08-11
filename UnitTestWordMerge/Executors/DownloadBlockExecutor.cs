@@ -21,9 +21,6 @@ namespace UnitTestWordMerge.Executors
         public OrganizationResponse Execute(OrganizationRequest request,IXrmFakedContext ctx)
         {
             var req = (DownloadBlockRequest)request;
-
-
-
             var data = InMemoryFileStorage.GetFile(_idResolver());
 
             return new DownloadBlockResponse

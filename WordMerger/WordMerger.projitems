@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Overrides.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\BaseAbstractHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constant\Annotation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)constant\Const.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)core\IFileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CoupleExtension.cs" />

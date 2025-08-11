@@ -282,7 +282,7 @@ namespace WordMerge.Helpers
 
             var font = stylesheet.Fonts.ElementAt((int) cellFormat.FontId.Value) as Font;
             string fontName = font?.FontName?.Val;
-            fontSize = font?.FontSize != null ? (int)font.FontSize.Val.Value : 0;
+            fontSize = font?.FontSize != null ? (int)font.FontSize?.Val?.Value : 0;
             var bold = font?.Bold != null;
             var italic = font?.Italic != null;
             if (font?.Color == null || string.IsNullOrEmpty(font.Color.Rgb?.Value))

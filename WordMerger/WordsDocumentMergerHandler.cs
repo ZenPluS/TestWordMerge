@@ -42,7 +42,8 @@ namespace WordMerge
         }
 
         private Entity MergeDocumentsIntoWordHandle(
-            Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> mergeAction,
+            Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> mergeIfWordAction,
+            Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> mergeIfExcelAction,
             string logStart,
             string logEnd,
             string errorPrefix)
@@ -52,9 +53,15 @@ namespace WordMerge
                 Logger($"{Header} - {logStart}");
 
                 var allFileFields = _configuration.ConvertAll(i => i.Left);
+                var isExcelDictionary = new Dictionary<string, bool>();
 
                 var allFiles = allFileFields
-                    .ConvertAll(f => (Field: f, File: _fileDownloader.DownloadFile(Logger, _sourceEntityDocumentToInject.ToEntityReference(), f)))
+                    .ConvertAll(f =>
+                    {
+                        var file = _fileDownloader.DownloadFile(Logger, _sourceEntityDocumentToInject.ToEntityReference(), f, out var isExcel);
+                        isExcelDictionary[f] = isExcel;
+                        return (Field: f, File: file);
+                    })
                     .Where(i => i.File != null)
                     .ToDictionary(i => i.Field, i => i.File);
 
@@ -71,7 +78,8 @@ namespace WordMerge
                 {
                     try
                     {
-                        var result = mergeAction(c, allFiles, mainBytes);
+                        var isExcel = isExcelDictionary[c.Left];
+                        var result = isExcel ? mergeIfExcelAction(c, allFiles, mainBytes) : mergeIfWordAction(c, allFiles, mainBytes);
                         mainBytes = result.Item2;
                         return result.Item1;
                     }
@@ -102,47 +110,50 @@ namespace WordMerge
         }
 
         /// <summary>
-        /// Handles the merging of Excel files from the source entity into the main Word file.
+        /// Merges multiple files from the configured source entity into the main Word document.
+        /// Handles both Word and Excel files, replacing placeholders in the main document with the content of the corresponding files.
         /// </summary>
-        /// <returns>Updated Annotation</returns>
-        public Entity ExcelDocumentsIntoWordHandle()
+        /// <returns>
+        /// An <see cref="Entity"/> representing the main annotation with Word document and merged content, or <c>null</c> if merging fails.
+        /// </returns>
+        public Entity FileDocumentsIntoWordHandle()
         {
             return MergeDocumentsIntoWordHandle(
-                (c, allFiles, mainBytes) =>
-                {
-                    var currentFile = allFiles[c.Left];
-                    var excelTable = WordsMergerHelper.ConvertExcelToWordTable(currentFile);
-                    var result = MergeExcelDocumentsBase64(mainBytes, excelTable, c);
-                    if (result == null)
-                        return (false, null);
-
-                    mainBytes = result;
-                    return (true, mainBytes);
-                },
-                "Starting to merge Excel files",
-                "End Excel merge",
-                "An error occurred while merging Excel file for field"
+                WordDocumentsHandle(),
+                ExcelDocumentsHandle(),
+                Logs.Start,
+                Logs.End,
+                Logs.Error
             );
         }
 
         /// <summary>
-        /// Handles the merging of Word files from the source entity into the main Word file.
+        /// Func to handle merging Excel documents.
         /// </summary>
-        /// <returns>Updated Annotation</returns>
-        public Entity WordDocumentsIntoWordHandle()
-        {
-            return MergeDocumentsIntoWordHandle(
-                (c, allFiles, mainBytes) =>
-                {
-                    var currentFile = allFiles[c.Left];
-                    var result = MergeWordDocumentsBase64(mainBytes, currentFile, c);
-                    return ResultManaging(result, ref mainBytes);
-                },
-                "Starting to merge Word files",
-                "End Word merge",
-                "An error occurred while merging Word file for field"
-            );
-        }
+        private Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> ExcelDocumentsHandle()
+            => (c, allFiles, mainBytes) =>
+            {
+                var currentFile = allFiles[c.Left];
+                var excelTable = WordsMergerHelper.ConvertExcelToWordTable(currentFile);
+                var result = MergeExcelDocumentsBase64(mainBytes, excelTable, c);
+                if (result == null)
+                    return (false, null);
+
+                mainBytes = result;
+                return (true, mainBytes);
+            };
+
+        /// <summary>
+        /// Func to handle merging Word documents.
+        /// </summary>
+        private Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> WordDocumentsHandle()
+            => (c, allFiles, mainBytes) =>
+            {
+                var currentFile = allFiles[c.Left];
+                var result = MergeWordDocumentsBase64(mainBytes, currentFile, c);
+                return ResultManaging(result, ref mainBytes);
+            };
+
 
         private static (bool, byte[]) ResultManaging(byte[] result, ref byte[] mainBytes)
         {
@@ -154,7 +165,7 @@ namespace WordMerge
         }
 
         /// <summary>
-        ///  Merges an Excel document into a Word document by replacing a placeholder in the main document with the content of the Excel table.
+        /// Merges an Excel document into a Word document by replacing a placeholder in the main document with the content of the Excel table.
         /// </summary>
         /// <param name="mainBytes">byte array of main file</param>
         /// <param name="excelTable">The table object representing the Excel data to be inserted into the Word document.</param>

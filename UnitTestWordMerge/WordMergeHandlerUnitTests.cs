@@ -105,6 +105,58 @@ namespace UnitTestWordMerge
             Assert.Throws<ArgumentNullException>(() =>
                 new WordsDocumentMergerHandler(service, entity, annotation, null, null));
         }
+
+         [Fact]
+        public void ReturnsNotNull_WhenAConfiguredFileIsMissing()
+        {
+            IsExcelExecution = false;
+            // Config richiede campo inesistente
+            var badConfig = new List<Couple<string,string>>
+            {
+                new Couple<string,string>("missing_field", "<<CONTENT>>")
+            };
+
+            var source = Context.GetEntityById("incident", FileIdWord);
+            var annotation = Context.GetEntityById("annotation", MainFileId);
+
+            var handler = new WordsDocumentMergerHandler(
+                Service,
+                source,
+                annotation,
+                badConfig,
+                null,
+                _ => {}
+            );
+
+            var result = handler.FileDocumentsIntoWordHandle();
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public void ReturnsNull_WhenPlaceholderNotFound()
+        {
+            IsExcelExecution = false;
+            // Placeholder errato
+            var wrongPlaceholder = new List<Couple<string,string>>
+            {
+                new Couple<string,string>("dev_fileid", "<<WRONG>>")
+            };
+
+            var source = Context.GetEntityById("incident", FileIdWord);
+            var annotation = Context.GetEntityById("annotation", MainFileId);
+
+            var handler = new WordsDocumentMergerHandler(
+                Service,
+                source,
+                annotation,
+                wrongPlaceholder,
+                null,
+                _ => {}
+            );
+
+            var result = handler.FileDocumentsIntoWordHandle();
+            Assert.Null(result);
+        }
     }
 
     public class FakeOrganizationService : IOrganizationService

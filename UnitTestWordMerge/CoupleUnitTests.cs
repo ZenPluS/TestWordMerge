@@ -1,8 +1,10 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Bibliography;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using DocumentFormat.OpenXml.Bibliography;
+using WordMerge.Core;
+using WordMerge.Extensions;
 using WordMerge.Models;
 using Xunit;
 
@@ -133,6 +135,67 @@ namespace UnitTestWordMerge
             Assert.Equal(42, tuple[0]);
             Assert.Equal("foo", tuple[1]);
             Assert.Throws<IndexOutOfRangeException>(() => tuple[2]);
+        }
+
+         [Fact]
+        public void CompareTo_ReturnsOne_WhenOtherIsNull()
+        {
+            var c = new Couple<int, string>(5, "X");
+            Assert.True(c.CompareTo(null) > 0);
+        }
+
+        [Fact]
+        public void ComparisonOperators_HandleNulls()
+        {
+            Couple<int,string> a = null;
+            var b = new Couple<int,string>(1, "B");
+
+            Assert.True(a == null);
+            Assert.True(b != null);
+            Assert.True(a < b);
+            Assert.False(b < a);
+            Assert.True(b > a);
+            Assert.True(a <= b);
+            Assert.True(b >= a);
+        }
+
+        [Fact]
+        public void CompareTo_UsesLeftThenRight()
+        {
+            var c1 = new Couple<int,string>(1, "B");
+            var c2 = new Couple<int,string>(2, "A");
+            var c3 = new Couple<int,string>(1, "C");
+
+            Assert.True(c1.CompareTo(c2) < 0); // Left decides
+            Assert.True(c1.CompareTo(c3) < 0); // Left equal, Right decides
+        }
+
+        [Fact]
+        public void IsEqualTo_ReturnsTrue_ForSameValues()
+        {
+            var c1 = new Couple<int,string>(1,"A");
+            var c2 = new Couple<int,string>(1,"A");
+            Assert.True(c1.IsEqualTo(c2));
+        }
+
+        [Fact]
+        public void IsEqualTo_Throws_WhenOtherNull()
+        {
+            var c1 = new Couple<int,string>(1,"A");
+            Assert.Throws<ArgumentNullException>(() => c1.IsEqualTo(null));
+        }
+
+        [Fact]
+        public void LeftItems_And_RightItems_Work()
+        {
+            var list = new List<ICouple<int,string>>
+            {
+                new Couple<int,string>(1,"A"),
+                new Couple<int,string>(2,"B")
+            };
+
+            Assert.Equal(new[]{1,2}, list.LeftItems());
+            Assert.Equal(new[]{"A","B"}, list.RightItems());
         }
     }
 }

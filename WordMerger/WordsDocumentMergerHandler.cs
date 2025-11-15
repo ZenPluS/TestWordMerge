@@ -152,8 +152,7 @@ namespace WordMerge
         #endregion
 
         #region Core Merge Logic
-
-        private byte[] ApplyAllMergesInSingleSession(
+        private static byte[] ApplyAllMergesInSingleSession(
             byte[] mainBytes,
             List<(Couple<string, string> Config, byte[] Bytes, bool IsExcel)> files,
             List<string> errors)
@@ -167,12 +166,11 @@ namespace WordMerge
                 {
                     var body = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
 
-                    foreach (var fd in files)
+                    foreach (var ((left, placeholderToken), bytes, isExcel) in files)
                     {
-                        var placeholderToken = fd.Config.Right;
                         if (string.IsNullOrWhiteSpace(placeholderToken))
                         {
-                            errors.Add($"Empty placeholder for field '{fd.Config.Left}'.");
+                            errors.Add($"Empty placeholder for field '{left}'.");
                             continue;
                         }
 
@@ -183,8 +181,7 @@ namespace WordMerge
                             continue;
                         }
 
-                        var parentBody = paragraph.Parent as Body;
-                        if (parentBody == null)
+                        if (!(paragraph.Parent is Body parentBody))
                         {
                             errors.Add($"Placeholder '{placeholderToken}' not inside document body.");
                             continue;
@@ -193,14 +190,14 @@ namespace WordMerge
                         var index = parentBody.Elements().ToList().IndexOf(paragraph);
                         paragraph.Remove();
 
-                        if (fd.IsExcel)
+                        if (isExcel)
                         {
-                            var table = WordsMergerHelper.ConvertExcelToWordTable(fd.Bytes);
+                            var table = WordsMergerHelper.ConvertExcelToWordTable(bytes);
                             parentBody.InsertAt(table, index);
                         }
                         else
                         {
-                            using (var insertStream = new MemoryStream(fd.Bytes))
+                            using (var insertStream = new MemoryStream(bytes))
                             using (var insertDoc = WordprocessingDocument.Open(insertStream, false))
                             {
                                 WordsMergerHelper.CopyStyles(mainDoc, insertDoc);

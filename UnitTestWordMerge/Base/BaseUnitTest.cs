@@ -91,18 +91,24 @@ namespace UnitTestWordMerge.Base
 
             context.Initialize(new[] { fileWordEntity, fileExcelEntity, annotationEntity });
 
-            var entityMetadataAnnotation = new EntityMetadata();
-            entityMetadataAnnotation.LogicalName = "a";
+            var entityMetadataAnnotation = new EntityMetadata
+            {
+                LogicalName = "a"
+            };
             var attributeAnnotation = new StringAttributeMetadata() { LogicalName = "annotation" };
             entityMetadataAnnotation.SetAttribute(attributeAnnotation);
 
-            var entityMetadataIncident = new EntityMetadata();
-            entityMetadataIncident.LogicalName = "b";
+            var entityMetadataIncident = new EntityMetadata
+            {
+                LogicalName = "b"
+            };
             var attributeIncident = new StringAttributeMetadata() { LogicalName = "incident" };
             entityMetadataIncident.SetAttribute(attributeIncident);
 
-            var entityMetadataTask = new EntityMetadata();
-            entityMetadataTask.LogicalName = "c";
+            var entityMetadataTask = new EntityMetadata
+            {
+                LogicalName = "c"
+            };
             var attributeTask = new StringAttributeMetadata() { LogicalName = "task" };
             entityMetadataTask.SetAttribute(attributeTask);
 

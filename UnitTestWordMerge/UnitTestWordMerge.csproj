@@ -53,6 +53,7 @@
     <Compile Include="Helpers\TestHelper.cs" />
     <Compile Include="WordMergeHandlerUnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WordsDocumentMergerHandlerAdditionalTests.cs" />
     <Compile Include="WordsMergerHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>

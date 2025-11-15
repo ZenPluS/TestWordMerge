@@ -7,113 +7,118 @@ using UnitTestWordMerge.Base;
 using UnitTestWordMerge.Helpers;
 using WordMerge;
 using WordMerge.Models;
+using WordMerge.Results;
 using Xunit;
 
 namespace UnitTestWordMerge
 {
-    public class WordMergeHandlerUnitTests
-        : BaseUnitTest
+    public class WordMergeHandlerUnitTests : BaseUnitTest
     {
-        /// <summary>
-        /// Test the functionality of merging a Word file in a field into another file as an annotation.
-        /// </summary>
         [Fact]
-        public void MergeWordFileInFieldIntoAnotherFileAsAnnotation()
+        public void MergeConfiguredFiles_ReturnsSuccess_ForValidWordInsertion()
         {
             IsExcelExecution = false;
-            var file = Context.GetEntityById("incident", FileIdWord);
+            var source = Context.GetEntityById("incident", FileIdWord);
             var annotation = Context.GetEntityById("annotation", MainFileId);
-            var wordMergeHandler = new WordsDocumentMergerHandler(
+
+            var handler = new WordsDocumentMergerHandler(
                 Service,
-                file,
+                source,
                 annotation,
                 ConfWord,
                 null,
-                message => TracingService.Trace(message)
-                );
+                _ => { }
+            );
 
-            var resultAnnotation = wordMergeHandler.FileDocumentsIntoWordHandle();
+            var result = handler.MergeConfiguredFiles();
 
-            var bas64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
+            Assert.True(result.Success);
+            Assert.NotNull(result.OutputAnnotation);
+            Assert.Empty(result.Errors);
+
+            var base64Body = result.OutputAnnotation.GetAttributeValue<string>("documentbody");
+            Assert.False(string.IsNullOrWhiteSpace(base64Body));
+
             var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MergedWordWithWord.docx");
-            TestHelper.CreateFile(bas64Body, filePath);
+            TestHelper.CreateFile(base64Body, filePath);
         }
 
         [Fact]
-        public void MergeExcelFileInFieldIntoWordFileAsAnnotation()
+        public void MergeConfiguredFiles_ReturnsSuccess_ForValidExcelInsertion()
         {
             IsExcelExecution = true;
-            var file = Context.GetEntityById("task", FileIdExcel);
+            var source = Context.GetEntityById("task", FileIdExcel);
             var annotation = Context.GetEntityById("annotation", MainFileId);
 
-            var wordMergeHandler = new WordsDocumentMergerHandler(
+            var handler = new WordsDocumentMergerHandler(
                 Service,
-                file,
+                source,
                 annotation,
                 ConfExcel,
                 null,
-                message => TracingService.Trace(message)
+                _ => { }
             );
 
-            var resultAnnotation = wordMergeHandler.FileDocumentsIntoWordHandle();
+            var result = handler.MergeConfiguredFiles();
 
-            var bas64Body = resultAnnotation.GetAttributeValue<string>("documentbody");
+            Assert.True(result.Success);
+            Assert.NotNull(result.OutputAnnotation);
+            Assert.Empty(result.Errors);
+
+            var base64Body = result.OutputAnnotation.GetAttributeValue<string>("documentbody");
+            Assert.False(string.IsNullOrWhiteSpace(base64Body));
+
             var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MergedWordWithExcel.docx");
-            TestHelper.CreateFile(bas64Body, filePath);
+            TestHelper.CreateFile(base64Body, filePath);
         }
 
         [Fact]
-        public void Constructor_ThrowsArgumentNullException_WhenServiceIsNull()
+        public void MergeConfiguredFiles_Fails_WhenServiceIsNull()
         {
             var entity = new Entity("incident");
             var annotation = new Entity("annotation");
             var config = new List<Couple<string, string>>();
-
             Assert.Throws<ArgumentNullException>(() =>
                 new WordsDocumentMergerHandler(null, entity, annotation, config, null));
         }
 
         [Fact]
-        public void Constructor_ThrowsArgumentNullException_WhenSourceEntityIsNull()
+        public void MergeConfiguredFiles_Fails_WhenSourceEntityIsNull()
         {
             var service = new FakeOrganizationService();
             var annotation = new Entity("annotation");
             var config = new List<Couple<string, string>>();
-
             Assert.Throws<ArgumentNullException>(() =>
                 new WordsDocumentMergerHandler(service, null, annotation, config, null));
         }
 
         [Fact]
-        public void Constructor_ThrowsArgumentNullException_WhenAnnotationIsNull()
+        public void MergeConfiguredFiles_Fails_WhenAnnotationIsNull()
         {
             var service = new FakeOrganizationService();
-            var entity = new Entity("incident");
+            var source = new Entity("incident");
             var config = new List<Couple<string, string>>();
-
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(service, entity, null, config, null));
+                new WordsDocumentMergerHandler(service, source, null, config, null));
         }
 
         [Fact]
-        public void Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull()
+        public void MergeConfiguredFiles_Fails_WhenConfigurationIsNull()
         {
             var service = new FakeOrganizationService();
-            var entity = new Entity("incident");
+            var source = new Entity("incident");
             var annotation = new Entity("annotation");
-
             Assert.Throws<ArgumentNullException>(() =>
-                new WordsDocumentMergerHandler(service, entity, annotation, null, null));
+                new WordsDocumentMergerHandler(service, source, annotation, null, null));
         }
 
-         [Fact]
-        public void ReturnsNotNull_WhenAConfiguredFileIsMissing()
+        [Fact]
+        public void MergeConfiguredFiles_Fails_WhenConfiguredFileIsMissing()
         {
             IsExcelExecution = false;
-            // Config richiede campo inesistente
-            var badConfig = new List<Couple<string,string>>
+            var badConfig = new List<Couple<string, string>>
             {
-                new Couple<string,string>("missing_field", "<<CONTENT>>")
+                new Couple<string, string>("missing_field", "<<CONTENT>>")
             };
 
             var source = Context.GetEntityById("incident", FileIdWord);
@@ -125,21 +130,23 @@ namespace UnitTestWordMerge
                 annotation,
                 badConfig,
                 null,
-                _ => {}
+                _ => { }
             );
 
-            var result = handler.FileDocumentsIntoWordHandle();
-            Assert.NotNull(result);
+            var result = handler.MergeConfiguredFiles();
+
+            Assert.False(result.Success);
+            Assert.Null(result.OutputAnnotation);
+            Assert.Contains(result.Errors, e => e.Contains("missing_field"));
         }
 
         [Fact]
-        public void ReturnsNull_WhenPlaceholderNotFound()
+        public void MergeConfiguredFiles_Fails_WhenPlaceholderNotFound()
         {
             IsExcelExecution = false;
-            // Placeholder errato
-            var wrongPlaceholder = new List<Couple<string,string>>
+            var wrongPlaceholder = new List<Couple<string, string>>
             {
-                new Couple<string,string>("dev_fileid", "<<WRONG>>")
+                new Couple<string, string>("dev_fileid", "<<WRONG>>")
             };
 
             var source = Context.GetEntityById("incident", FileIdWord);
@@ -151,23 +158,75 @@ namespace UnitTestWordMerge
                 annotation,
                 wrongPlaceholder,
                 null,
-                _ => {}
+                _ => { }
             );
 
-            var result = handler.FileDocumentsIntoWordHandle();
-            Assert.Null(result);
+            var result = handler.MergeConfiguredFiles();
+
+            Assert.False(result.Success);
+            Assert.Null(result.OutputAnnotation);
+            Assert.Contains(result.Errors, e => e.Contains("not found"));
+        }
+
+        [Fact]
+        public void MergeConfiguredFiles_Fails_WithEmptyConfiguration()
+        {
+            IsExcelExecution = false;
+            var source = Context.GetEntityById("incident", FileIdWord);
+            var annotation = Context.GetEntityById("annotation", MainFileId);
+
+            var emptyConfig = new List<Couple<string, string>>();
+
+            var handler = new WordsDocumentMergerHandler(
+                Service,
+                source,
+                annotation,
+                emptyConfig,
+                null,
+                _ => { }
+            );
+
+            var result = handler.MergeConfiguredFiles();
+
+            Assert.False(result.Success);
+            Assert.Contains(result.Errors, e => e.Contains("empty"));
+        }
+
+        [Fact]
+        public void FileDocumentsIntoWordHandle_ReturnsNull_OnFailure()
+        {
+            IsExcelExecution = false;
+            var wrongPlaceholder = new List<Couple<string, string>>
+            {
+                new Couple<string, string>("dev_fileid", "<<WRONG>>")
+            };
+
+            var source = Context.GetEntityById("incident", FileIdWord);
+            var annotation = Context.GetEntityById("annotation", MainFileId);
+
+            var handler = new WordsDocumentMergerHandler(
+                Service,
+                source,
+                annotation,
+                wrongPlaceholder,
+                null,
+                _ => { }
+            );
+
+            var legacyResult = handler.FileDocumentsIntoWordHandle();
+            Assert.Null(legacyResult);
         }
     }
 
     public class FakeOrganizationService : IOrganizationService
     {
-        public Guid Create(Entity entity) => Guid.NewGuid();
-        public Entity Retrieve(string entityName, Guid id, ColumnSet columnSet) => null;
+        public Guid Create(Entity entity) { return Guid.NewGuid(); }
+        public Entity Retrieve(string entityName, Guid id, ColumnSet columnSet) { return null; }
         public void Update(Entity entity) { }
         public void Delete(string entityName, Guid id) { }
-        public OrganizationResponse Execute(OrganizationRequest request) => null;
+        public OrganizationResponse Execute(OrganizationRequest request) { return null; }
         public void Associate(string entityName, Guid entityId, Relationship relationship, EntityReferenceCollection relatedEntities) { }
         public void Disassociate(string entityName, Guid entityId, Relationship relationship, EntityReferenceCollection relatedEntities) { }
-        public EntityCollection RetrieveMultiple(QueryBase query) => null;
+        public EntityCollection RetrieveMultiple(QueryBase query) { return null; }
     }
 }

@@ -5,16 +5,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using WordMerge.Abstract;
 using WordMerge.Constant;
+using WordMerge.Core;
 using WordMerge.Extensions;
+using WordMerge.Globals;
 using WordMerge.Helpers;
 using WordMerge.Models;
+using WordMerge.Results;
+using WordMerger.Factories;
 
 namespace WordMerge
 {
     /// <summary>
     /// Handler to merge files from a source entity into a main Word file.
+    /// New structured API: MergeConfiguredFiles() returning MergeResult.
+    /// Legacy API retained: FileDocumentsIntoWordHandle().
     /// </summary>
     public sealed class WordsDocumentMergerHandler
         : BaseAbstractHandler<string>
@@ -22,8 +29,12 @@ namespace WordMerge
         private readonly Entity _sourceEntityDocumentToInject;
         private readonly Entity _annotationMainWordFile;
         private readonly List<Couple<string, string>> _configuration;
-        private const string Header = nameof(WordsDocumentMergerHandler);
         private readonly IFileDownloader _fileDownloader;
+        private readonly IMergeLogger _structuredLogger;
+
+        private const string Header = nameof(WordsDocumentMergerHandler);
+        private static readonly Regex PlaceholderRegex = new Regex("<<[A-Z0-9_]+>>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         public WordsDocumentMergerHandler(
             IOrganizationService service,
             Entity sourceEntityDocumentToInject,
@@ -33,256 +44,208 @@ namespace WordMerge
             Action<string> logger = null)
             : base(logger)
         {
-            if (service == null)
-                throw new ArgumentNullException(nameof(service));
+            if (service == null) throw new ArgumentNullException(nameof(service));
             _sourceEntityDocumentToInject = sourceEntityDocumentToInject ?? throw new ArgumentNullException(nameof(sourceEntityDocumentToInject));
             _annotationMainWordFile = annotationMainWordFile ?? throw new ArgumentNullException(nameof(annotationMainWordFile));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _fileDownloader = fileDownloader ?? new FileDownloader(service);
+            _structuredLogger = MergeLoggerFactory.Create(logger);
         }
 
-        private Entity MergeDocumentsIntoWordHandle(
-            Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> mergeIfWordAction,
-            Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> mergeIfExcelAction,
-            string logStart,
-            string logEnd,
-            string errorPrefix)
+        #region Public API
+
+        /// <summary>
+        /// Structured merge returning status and errors.
+        /// </summary>
+        public MergeResult MergeConfiguredFiles()
         {
+            var errors = new List<string>();
+            _structuredLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.Start}");
+
+            if (_configuration.Count == 0)
+            {
+                errors.Add("Configuration list is empty.");
+                return MergeResult.Fail(errors);
+            }
+
+            if (!_annotationMainWordFile.Contains(Annotation.AnnotationDocumentBody))
+            {
+                errors.Add("Main annotation entity missing documentbody attribute.");
+                return MergeResult.Fail(errors);
+            }
+
+            var mainBase64 = _annotationMainWordFile.GetAttributeValue<string>(Annotation.AnnotationDocumentBody);
+            if (string.IsNullOrWhiteSpace(mainBase64))
+            {
+                errors.Add("Main annotation documentbody is empty.");
+                return MergeResult.Fail(errors);
+            }
+
+            byte[] mainBytes;
             try
             {
-                Logger($"{Header} - {logStart}");
+                mainBytes = Convert.FromBase64String(mainBase64);
+            }
+            catch (FormatException fe)
+            {
+                errors.Add($"Main annotation documentbody is not valid Base64: {fe.Message}");
+                return MergeResult.Fail(errors);
+            }
 
-                var allFileFields = _configuration.ConvertAll(i => i.Left);
-                var isExcelDictionary = new Dictionary<string, bool>();
-
-                var allFiles = allFileFields
-                    .ConvertAll(f =>
-                    {
-                        var file = _fileDownloader.DownloadFile(Logger, _sourceEntityDocumentToInject.ToEntityReference(), f, out var isExcel);
-                        isExcelDictionary[f] = isExcel;
-                        return (Field: f, File: file);
-                    })
-                    .Where(i => i.File != null)
-                    .ToDictionary(i => i.Field, i => i.File);
-
-                if (allFileFields.Count > allFiles.Count)
+            var fileDescriptors = new List<(Couple<string, string> Config, byte[] Bytes, bool IsExcel)>();
+            foreach (var cfg in _configuration)
+            {
+                if (!_sourceEntityDocumentToInject.Contains(cfg.Left) || _sourceEntityDocumentToInject[cfg.Left] == null)
                 {
-                    Logger("Retrieved files are less than required files inside configuration - exit immediately");
-                    return null;
+                    errors.Add($"File attribute '{cfg.Left}' missing on source entity.");
+                    continue;
                 }
 
-                var wordMainFile = _annotationMainWordFile.GetAttributeValue<string>(Annotation.AnnotationDocumentBody);
-                var mainBytes = Convert.FromBase64String(wordMainFile);
+                var bytes = _fileDownloader.DownloadFile(m => _structuredLogger.Log(MergeLogSeverity.Warning, m),
+                    _sourceEntityDocumentToInject.ToEntityReference(),
+                    cfg.Left,
+                    out var isExcel);
 
-                var check = Array.TrueForAll(_configuration.ToArray(), c =>
+                if (bytes == null)
                 {
-                    try
-                    {
-                        var isExcel = isExcelDictionary[c.Left];
-                        var result = isExcel ? mergeIfExcelAction(c, allFiles, mainBytes) : mergeIfWordAction(c, allFiles, mainBytes);
-                        mainBytes = result.Item2;
-                        return result.Item1;
-                    }
-                    catch (Exception e)
-                    {
-                        Logger($"{Header} - {errorPrefix} {c.Right} - Exception {e.Message} - Stack {e.StackTrace}");
-                        return false;
-                    }
-                });
+                    errors.Add($"File missing or download failed for field '{cfg.Left}'.");
+                    continue;
+                }
 
-                if (!check)
-                    return null;
-
-                var clonedAnnotation = _annotationMainWordFile.CloneEmpty();
-                clonedAnnotation[Annotation.AnnotationDocumentBody] = Convert.ToBase64String(mainBytes);
-
-                return clonedAnnotation;
+                fileDescriptors.Add((cfg, bytes, isExcel));
             }
-            catch (Exception e)
+
+            if (errors.Count > 0)
             {
-                Logger($"{Header} - An error occurred while merging files - Exception {e.Message} - Stack {e.StackTrace}");
-                return null;
+                return MergeResult.Fail(errors);
             }
-            finally
+
+            try
             {
-                Logger($"{Header} - {logEnd}");
+                mainBytes = ApplyAllMergesInSingleSession(mainBytes, fileDescriptors, errors);
             }
+            catch (Exception ex)
+            {
+                errors.Add($"Unexpected merge failure: {ex.Message}");
+            }
+
+            if (errors.Count > 0)
+                return MergeResult.Fail(errors);
+
+            var cloned = _annotationMainWordFile.CloneEmpty();
+            cloned[Annotation.AnnotationDocumentBody] = Convert.ToBase64String(mainBytes);
+
+            _structuredLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.End}");
+            return MergeResult.Ok(cloned);
         }
 
         /// <summary>
-        /// Merges multiple files from the configured source entity into the main Word document.
-        /// Handles both Word and Excel files, replacing placeholders in the main document with the content of the corresponding files.
+        /// Legacy method kept for backward compatibility (returns Entity or null).
+        /// Internally uses structured merge.
         /// </summary>
-        /// <returns>
-        /// An <see cref="Entity"/> representing the main annotation with Word document and merged content, or <c>null</c> if merging fails.
-        /// </returns>
         public Entity FileDocumentsIntoWordHandle()
         {
-            return MergeDocumentsIntoWordHandle(
-                WordDocumentsHandle(),
-                ExcelDocumentsHandle(),
-                Logs.Start,
-                Logs.End,
-                Logs.Error
-            );
+            var result = MergeConfiguredFiles();
+            return result.Success ? result.OutputAnnotation : null;
         }
 
-        /// <summary>
-        /// Func to handle merging Excel documents.
-        /// </summary>
-        private Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> ExcelDocumentsHandle()
-            => (c, allFiles, mainBytes) =>
-            {
-                var currentFile = allFiles[c.Left];
-                var excelTable = WordsMergerHelper.ConvertExcelToWordTable(currentFile);
-                var result = MergeExcelDocumentsBase64(mainBytes, excelTable, c);
-                if (result == null)
-                    return (false, null);
+        #endregion
 
-                mainBytes = result;
-                return (true, mainBytes);
-            };
+        #region Core Merge Logic
 
-        /// <summary>
-        /// Func to handle merging Word documents.
-        /// </summary>
-        private Func<Couple<string, string>, Dictionary<string, byte[]>, byte[], (bool, byte[])> WordDocumentsHandle()
-            => (c, allFiles, mainBytes) =>
-            {
-                var currentFile = allFiles[c.Left];
-                var result = MergeWordDocumentsBase64(mainBytes, currentFile, c);
-                return ResultManaging(result, ref mainBytes);
-            };
-
-
-        private static (bool, byte[]) ResultManaging(byte[] result, ref byte[] mainBytes)
-        {
-            if (result == null)
-                return (false, null);
-
-            mainBytes = result;
-            return (true, mainBytes);
-        }
-
-        /// <summary>
-        /// Merges an Excel document into a Word document by replacing a placeholder in the main document with the content of the Excel table.
-        /// </summary>
-        /// <param name="mainBytes">byte array of main file</param>
-        /// <param name="excelTable">The table object representing the Excel data to be inserted into the Word document.</param>
-        /// <param name="configuration"> field-placeholder configuration</param>
-        /// <returns>byte array of main filed modified with inserted file</returns>
-        private byte[] MergeExcelDocumentsBase64(
+        private byte[] ApplyAllMergesInSingleSession(
             byte[] mainBytes,
-            Table excelTable,
-            Couple<string, string> configuration
-        )
+            List<(Couple<string, string> Config, byte[] Bytes, bool IsExcel)> files,
+            List<string> errors)
         {
-            try
+            using (var mainStream = new MemoryStream())
             {
-                using (var mainStream = new MemoryStream())
+                mainStream.Write(mainBytes, 0, mainBytes.Length);
+                mainStream.Position = 0;
+
+                using (var mainDoc = WordprocessingDocument.Open(mainStream, true))
                 {
-                    mainStream.Write(mainBytes, 0, mainBytes.Length);
-                    mainStream.Position = 0;
+                    var body = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
 
-                    using (var mainDoc = WordprocessingDocument.Open(mainStream, true))
+                    foreach (var fd in files)
                     {
-                        var mainBody = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
-
-                        var placeholderParagraph = mainBody
-                                                       .Descendants<Paragraph>()
-                                                       .FirstOrDefault(p => p.InnerText.Contains(configuration.Right))
-                                                   ?? throw new InvalidOperationException("Placeholder not found in the principal document");
-
-                        if (placeholderParagraph.Parent is Body parentBody)
+                        var placeholderToken = fd.Config.Right;
+                        if (string.IsNullOrWhiteSpace(placeholderToken))
                         {
-                            var elements = parentBody.Elements().ToList();
-                            var index = elements.IndexOf(placeholderParagraph);
-                            placeholderParagraph.Remove();
+                            errors.Add($"Empty placeholder for field '{fd.Config.Left}'.");
+                            continue;
+                        }
 
-                            parentBody.InsertAt(excelTable, index);
+                        var paragraph = FindPlaceholderParagraph(body, placeholderToken);
+                        if (paragraph == null)
+                        {
+                            errors.Add($"Placeholder '{placeholderToken}' not found in main document.");
+                            continue;
+                        }
+
+                        var parentBody = paragraph.Parent as Body;
+                        if (parentBody == null)
+                        {
+                            errors.Add($"Placeholder '{placeholderToken}' not inside document body.");
+                            continue;
+                        }
+
+                        var index = parentBody.Elements().ToList().IndexOf(paragraph);
+                        paragraph.Remove();
+
+                        if (fd.IsExcel)
+                        {
+                            var table = WordsMergerHelper.ConvertExcelToWordTable(fd.Bytes);
+                            parentBody.InsertAt(table, index);
                         }
                         else
                         {
-                            throw new InvalidOperationException("Placeholder not present in principal document body");
-                        }
-
-                        mainDoc.MainDocumentPart?.Document.Save();
-                        return mainStream.ToArray();
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger($"An Error Occured while merging file for field {configuration.Left} Exception {e.Message} - Stack {e.StackTrace}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Merges two Word documents by replacing a placeholder in the main document with the content of the insert document.
-        /// </summary>
-        /// <param name="mainBytes">byte array of main file</param>
-        /// <param name="insertBytes"> byte array of file to be inserted into main file</param>
-        /// <param name="configuration"> field-placeholder configuration</param>
-        /// <returns> byte array of main filed modified with inserted file</returns>
-        private byte[] MergeWordDocumentsBase64(
-            byte[] mainBytes,
-            byte[] insertBytes,
-            Couple<string, string> configuration
-            )
-        {
-            try
-            {
-                using (var mainStream = new MemoryStream())
-                using (var insertStream = new MemoryStream(insertBytes))
-                {
-                    mainStream.Write(mainBytes, 0, mainBytes.Length);
-                    mainStream.Position = 0;
-
-                    using (var mainDoc = WordprocessingDocument.Open(mainStream, true))
-                    using (var insertDoc = WordprocessingDocument.Open(insertStream, false))
-                    {
-                        WordsMergerHelper.CopyStyles(mainDoc, insertDoc);
-                        var numberingMap = WordsMergerHelper.CopyNumbering(mainDoc, insertDoc);
-                        var imageMap = WordsMergerHelper.CopyImages(mainDoc, insertDoc);
-
-                        var mainBody = mainDoc.MainDocumentPart?.Document.Body ?? new Body();
-                        var insertBody = insertDoc.MainDocumentPart?.Document.Body ?? new Body();
-
-                        var placeholderParagraph = mainBody
-                            .Descendants<Paragraph>()
-                            .FirstOrDefault(p => p.InnerText.Contains(configuration.Right)) ?? throw new InvalidOperationException("Placeholder not found int he principal document");
-
-                        if (placeholderParagraph.Parent is Body parentBody)
-                        {
-                            var elements = parentBody.Elements().ToList();
-                            var index = elements.IndexOf(placeholderParagraph);
-                            placeholderParagraph.Remove();
-
-                            foreach (var element in insertBody.Elements())
+                            using (var insertStream = new MemoryStream(fd.Bytes))
+                            using (var insertDoc = WordprocessingDocument.Open(insertStream, false))
                             {
-                                var imported = element.CloneNode(true);
-                                WordsMergerHelper.UpdateImageReferences(imported, imageMap);
-                                WordsMergerHelper.UpdateNumberingReferences(imported, numberingMap);
-                                parentBody.InsertAt(imported, index++);
+                                WordsMergerHelper.CopyStyles(mainDoc, insertDoc);
+                                var numberingMap = WordsMergerHelper.CopyNumbering(mainDoc, insertDoc);
+                                var imageMap = WordsMergerHelper.CopyImages(mainDoc, insertDoc);
+
+                                var insertBody = insertDoc.MainDocumentPart?.Document.Body ?? new Body();
+                                foreach (var element in insertBody.Elements())
+                                {
+                                    var imported = element.CloneNode(true);
+                                    WordsMergerHelper.UpdateImageReferences(imported, imageMap);
+                                    WordsMergerHelper.UpdateNumberingReferences(imported, numberingMap);
+                                    parentBody.InsertAt(imported, index++);
+                                }
                             }
                         }
-                        else
-                        {
-                            throw new InvalidOperationException("Placeholder not present in principal document body");
-                        }
-
-                        mainDoc.MainDocumentPart?.Document.Save();
                     }
 
-                    return mainStream.ToArray();
+                    mainDoc.MainDocumentPart?.Document.Save();
                 }
-            }
-            catch (Exception e)
-            {
-                Logger($"An Error Occured while merging file for field {configuration.Left} Exception {e.Message} - Stack {e.StackTrace}");
-                return null;
+
+                return mainStream.ToArray();
             }
         }
+
+        private static Paragraph FindPlaceholderParagraph(Body body, string placeholder)
+        {
+            foreach (var paragraph in body.Descendants<Paragraph>())
+            {
+                var fullText = paragraph.InnerText;
+                if (string.Equals(fullText, placeholder, StringComparison.OrdinalIgnoreCase))
+                    return paragraph;
+
+                // Fallback: exact token present as distinct run text
+                var runs = paragraph.Descendants<Run>().Select(r => r.InnerText).ToList();
+                if (runs.Any(r => string.Equals(r, placeholder, StringComparison.OrdinalIgnoreCase)))
+                    return paragraph;
+
+                // If configuration expects tokens like <<CONTENT>> allow exact match within a run (but not substring of other characters)
+                if (PlaceholderRegex.IsMatch(placeholder) && runs.Any(r => r.Contains(placeholder)))
+                    return paragraph;
+            }
+            return null;
+        }
+
+        #endregion
     }
 }

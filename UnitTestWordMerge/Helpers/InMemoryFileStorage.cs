@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace UnitTestWordMerge.Helpers
 {

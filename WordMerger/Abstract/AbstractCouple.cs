@@ -1,6 +1,4 @@
-﻿using System;
-using System.Dynamic;
-using WordMerge.Core;
+﻿using WordMerge.Core;
 
 namespace WordMerge.Abstract
 {
@@ -14,6 +12,12 @@ namespace WordMerge.Abstract
         {
             Left = left;
             Right = right;
+        }
+
+        public void Deconstruct(out TLeft left, out TRight right)
+        {
+            left = Left;
+            right = Right;
         }
     }
 }

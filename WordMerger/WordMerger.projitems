@@ -16,13 +16,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)Constant\Annotation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)constant\Const.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)core\IFileDownloader.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)core\IMergeLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\IFileDownloader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\IMergeLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\CoupleExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Factories\MergeLoggerFactory.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)globals\MergeLogSeverity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constant\MergeLogSeverity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)helpers\FileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Logging\ActionMergeLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Logging\NullMergeLogger.cs" />
@@ -33,6 +33,5 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Globals\" />
   </ItemGroup>
 </Project>

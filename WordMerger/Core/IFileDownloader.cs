@@ -1,7 +1,7 @@
 using Microsoft.Xrm.Sdk;
 using System;
 
-namespace WordMerge.Helpers
+namespace WordMerge.Core
 {
     public interface IFileDownloader
     {

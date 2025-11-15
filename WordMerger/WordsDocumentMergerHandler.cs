@@ -5,12 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using WordMerge.Abstract;
 using WordMerge.Constant;
 using WordMerge.Core;
 using WordMerge.Extensions;
-using WordMerge.Globals;
 using WordMerge.Helpers;
 using WordMerge.Models;
 using WordMerge.Results;
@@ -20,8 +18,6 @@ namespace WordMerge
 {
     /// <summary>
     /// Handler to merge files from a source entity into a main Word file.
-    /// New structured API: MergeConfiguredFiles() returning MergeResult.
-    /// Legacy API retained: FileDocumentsIntoWordHandle().
     /// </summary>
     public sealed class WordsDocumentMergerHandler
         : BaseAbstractHandler<string>
@@ -31,9 +27,7 @@ namespace WordMerge
         private readonly List<Couple<string, string>> _configuration;
         private readonly IFileDownloader _fileDownloader;
         private readonly IMergeLogger _structuredLogger;
-
-        private const string Header = nameof(WordsDocumentMergerHandler);
-        private static readonly Regex PlaceholderRegex = new Regex("<<[A-Z0-9_]+>>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private readonly string _header = nameof(WordsDocumentMergerHandler);
 
         public WordsDocumentMergerHandler(
             IOrganizationService service,
@@ -60,7 +54,7 @@ namespace WordMerge
         public MergeResult MergeConfiguredFiles()
         {
             var errors = new List<string>();
-            _structuredLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.Start}");
+            _structuredLogger.Log(MergeLogSeverity.Info, $"{_header} - {Logs.Start}");
 
             if (_configuration.Count == 0)
             {
@@ -135,7 +129,7 @@ namespace WordMerge
             var cloned = _annotationMainWordFile.CloneEmpty();
             cloned[Annotation.AnnotationDocumentBody] = Convert.ToBase64String(mainBytes);
 
-            _structuredLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.End}");
+            _structuredLogger.Log(MergeLogSeverity.Info, $"{_header} - {Logs.End}");
             return MergeResult.Ok(cloned);
         }
 
@@ -174,7 +168,7 @@ namespace WordMerge
                             continue;
                         }
 
-                        var paragraph = FindPlaceholderParagraph(body, placeholderToken);
+                        var paragraph = WordsMergerHelper.FindPlaceholderParagraph(body, placeholderToken);
                         if (paragraph == null)
                         {
                             errors.Add($"Placeholder '{placeholderToken}' not found in main document.");
@@ -221,26 +215,6 @@ namespace WordMerge
 
                 return mainStream.ToArray();
             }
-        }
-
-        private static Paragraph FindPlaceholderParagraph(Body body, string placeholder)
-        {
-            foreach (var paragraph in body.Descendants<Paragraph>())
-            {
-                var fullText = paragraph.InnerText;
-                if (string.Equals(fullText, placeholder, StringComparison.OrdinalIgnoreCase))
-                    return paragraph;
-
-                // Fallback: exact token present as distinct run text
-                var runs = paragraph.Descendants<Run>().Select(r => r.InnerText).ToList();
-                if (runs.Any(r => string.Equals(r, placeholder, StringComparison.OrdinalIgnoreCase)))
-                    return paragraph;
-
-                // If configuration expects tokens like <<CONTENT>> allow exact match within a run (but not substring of other characters)
-                if (PlaceholderRegex.IsMatch(placeholder) && runs.Any(r => r.Contains(placeholder)))
-                    return paragraph;
-            }
-            return null;
         }
 
         #endregion

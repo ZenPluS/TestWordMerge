@@ -1,6 +1,6 @@
 using System;
 using WordMerge.Core;
-using WordMerge.Globals;
+using WordMerge.Constant;
 
 namespace WordMerge.Logging
 {

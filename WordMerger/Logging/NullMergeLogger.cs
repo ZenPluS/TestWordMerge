@@ -1,5 +1,5 @@
 ﻿using WordMerge.Core;
-using WordMerge.Globals;
+using WordMerge.Constant;
 
 namespace WordMerger.Logging
 {

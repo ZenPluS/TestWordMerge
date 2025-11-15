@@ -1,4 +1,4 @@
-namespace WordMerge.Globals
+namespace WordMerge.Constant
 {
     public enum MergeLogSeverity
     {

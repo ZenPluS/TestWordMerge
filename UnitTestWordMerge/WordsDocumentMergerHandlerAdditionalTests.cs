@@ -8,6 +8,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Xrm.Sdk;
 using UnitTestWordMerge.Base;
 using WordMerge;
+using WordMerge.Core;
 using WordMerge.Helpers;
 using WordMerge.Models;
 using Xunit;

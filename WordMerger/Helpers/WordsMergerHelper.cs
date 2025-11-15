@@ -3,37 +3,42 @@ using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
+using WordMerge.Constant;
 using Bold = DocumentFormat.OpenXml.Wordprocessing.Bold;
 using BottomBorder = DocumentFormat.OpenXml.Wordprocessing.BottomBorder;
 using Color = DocumentFormat.OpenXml.Wordprocessing.Color;
+using Drawing = DocumentFormat.OpenXml.Wordprocessing.Drawing;
+using Fill = DocumentFormat.OpenXml.Spreadsheet.Fill;
 using Font = DocumentFormat.OpenXml.Spreadsheet.Font;
 using FontSize = DocumentFormat.OpenXml.Wordprocessing.FontSize;
+using InsideHorizontalBorder = DocumentFormat.OpenXml.Wordprocessing.InsideHorizontalBorder;
+using InsideVerticalBorder = DocumentFormat.OpenXml.Wordprocessing.InsideVerticalBorder;
 using Italic = DocumentFormat.OpenXml.Wordprocessing.Italic;
 using LeftBorder = DocumentFormat.OpenXml.Wordprocessing.LeftBorder;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using RightBorder = DocumentFormat.OpenXml.Wordprocessing.RightBorder;
 using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
 using RunProperties = DocumentFormat.OpenXml.Wordprocessing.RunProperties;
 using Table = DocumentFormat.OpenXml.Wordprocessing.Table;
-using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
-using TopBorder = DocumentFormat.OpenXml.Wordprocessing.TopBorder;
-using Drawing = DocumentFormat.OpenXml.Wordprocessing.Drawing;
-using Fill = DocumentFormat.OpenXml.Spreadsheet.Fill;
-using InsideHorizontalBorder = DocumentFormat.OpenXml.Wordprocessing.InsideHorizontalBorder;
-using InsideVerticalBorder = DocumentFormat.OpenXml.Wordprocessing.InsideVerticalBorder;
-using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using TableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
 using TableCellProperties = DocumentFormat.OpenXml.Wordprocessing.TableCellProperties;
 using TableProperties = DocumentFormat.OpenXml.Wordprocessing.TableProperties;
 using TableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
 using TableStyle = DocumentFormat.OpenXml.Wordprocessing.TableStyle;
+using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
+using TopBorder = DocumentFormat.OpenXml.Wordprocessing.TopBorder;
 
 namespace WordMerge.Helpers
 {
     internal static class WordsMergerHelper
     {
+        private static readonly Regex PlaceholderRegex = new Regex(RegexPatterns.SearchPlaceholders, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         internal static void CopyStyles(WordprocessingDocument mainDoc, WordprocessingDocument insertDoc)
         {
             var mainStylePart = mainDoc.MainDocumentPart?.StyleDefinitionsPart ?? mainDoc.MainDocumentPart?.AddNewPart<StyleDefinitionsPart>();
@@ -305,6 +310,26 @@ namespace WordMerge.Helpers
 
             var stringTable = document.WorkbookPart?.SharedStringTablePart?.SharedStringTable;
             return stringTable?.ElementAt(int.Parse(value)).InnerText;
+        }
+
+        internal static Paragraph FindPlaceholderParagraph(Body body, string placeholder)
+        {
+            foreach (var paragraph in body.Descendants<Paragraph>())
+            {
+                var fullText = paragraph.InnerText;
+                if (string.Equals(fullText, placeholder, StringComparison.OrdinalIgnoreCase))
+                    return paragraph;
+
+                // Fallback: exact token present as distinct run text
+                var runs = paragraph.Descendants<Run>().Select(r => r.InnerText).ToList();
+                if (runs.Any(r => string.Equals(r, placeholder, StringComparison.OrdinalIgnoreCase)))
+                    return paragraph;
+
+                // If configuration expects tokens like <<CONTENT>> allow exact match within a run (but not substring of other characters)
+                if (PlaceholderRegex.IsMatch(placeholder) && runs.Any(r => r.Contains(placeholder)))
+                    return paragraph;
+            }
+            return null;
         }
     }
 }

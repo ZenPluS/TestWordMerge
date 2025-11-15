@@ -1,4 +1,4 @@
-using WordMerge.Globals;
+using WordMerge.Constant;
 
 namespace WordMerge.Core
 {

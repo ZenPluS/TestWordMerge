@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using WordMerge.Constant;
+using WordMerge.Core;
 using WordMerge.Extensions;
 
 namespace WordMerge.Helpers

@@ -1,7 +1,5 @@
 ﻿using WordMerge;
 using WordMerge.Models;
-using WordMerge.Results;
-using Microsoft.Xrm.Sdk;
 using Xunit;
 using UnitTestWordMerge.Base;
 using System.Collections.Generic;

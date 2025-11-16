@@ -13,7 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Operators.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Overrides.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\BaseAbstractHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)constant\Const.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constant\Const.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\IFileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\IMergeLogger.cs" />

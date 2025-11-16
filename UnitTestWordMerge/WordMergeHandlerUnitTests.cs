@@ -7,7 +7,6 @@ using UnitTestWordMerge.Base;
 using UnitTestWordMerge.Helpers;
 using WordMerge;
 using WordMerge.Models;
-using WordMerge.Results;
 using Xunit;
 
 namespace UnitTestWordMerge

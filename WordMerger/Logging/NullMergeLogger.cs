@@ -8,6 +8,9 @@ namespace WordMerger.Logging
         : IMergeLogger
     {
         public void Log(MergeLogSeverity severity, string message) { }
-        public void LogError(string message, List<string> errors) { }
+        public void LogError(string message, List<string> errors)
+        {
+            errors?.Add(message);
+        }
     }
 }

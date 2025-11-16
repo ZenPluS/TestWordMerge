@@ -13,7 +13,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Operators.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\AbstractCouple_Overrides.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Abstract\BaseAbstractHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Constant\Annotation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)constant\Const.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\ICouple.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\IFileDownloader.cs" />
@@ -22,7 +21,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EntityExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\OrganizationServiceExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Factories\MergeLoggerFactory.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Constant\MergeLogSeverity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)helpers\FileDownloader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Logging\ActionMergeLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Logging\NullMergeLogger.cs" />

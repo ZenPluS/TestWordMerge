@@ -1,4 +1,5 @@
-﻿using WordMerge.Core;
+﻿using System.Collections.Generic;
+using WordMerge.Core;
 using WordMerge.Constant;
 
 namespace WordMerger.Logging
@@ -7,5 +8,6 @@ namespace WordMerger.Logging
         : IMergeLogger
     {
         public void Log(MergeLogSeverity severity, string message) { }
+        public void LogError(string message, List<string> errors) { }
     }
 }

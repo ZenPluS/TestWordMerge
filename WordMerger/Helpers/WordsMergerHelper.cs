@@ -203,16 +203,14 @@ namespace WordMerge.Helpers
                     {
                         var cellValue = GetCellValue(spreadsheet, cell);
 
-                        // Ottieni formattazione cella
                         var cellFormat = GetCellFormat(spreadsheet, cell);
                         var (bgColor, fontName, fontSize, bold, italic, fontColor) = GetCellStyle(spreadsheet, cellFormat);
 
-                        // Crea run con font e colore
                         var runProps = new RunProperties();
                         if (!string.IsNullOrEmpty(fontName))
                             runProps.Append(new RunFonts() { Ascii = fontName, HighAnsi = fontName });
                         if (fontSize > 0)
-                            runProps.Append(new FontSize() { Val = (fontSize * 2).ToString() }); // Word vuole la metà
+                            runProps.Append(new FontSize() { Val = (fontSize * 2).ToString() });
                         if (bold)
                             runProps.Append(new Bold());
                         if (italic)
@@ -222,7 +220,6 @@ namespace WordMerge.Helpers
 
                         var run = new Run(runProps, new Text(cellValue ?? string.Empty) { Space = SpaceProcessingModeValues.Preserve });
 
-                        // Crea cella con shading (colore di sfondo)
                         var cellProps = new TableCellProperties();
                         if (!string.IsNullOrEmpty(bgColor))
                         {
@@ -243,7 +240,6 @@ namespace WordMerge.Helpers
             }
         }
 
-        // Ottieni il formato della cella (CellFormat) da Stylesheet
         internal static  CellFormat GetCellFormat(SpreadsheetDocument doc, Cell cell)
         {
             if (cell.StyleIndex == null)

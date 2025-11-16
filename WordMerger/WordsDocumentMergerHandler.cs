@@ -26,8 +26,8 @@ namespace WordMerge
         private readonly Entity _annotationMainWordFile;
         private readonly List<Couple<string, string>> _configuration;
         private readonly IFileDownloader _fileDownloader;
-        private readonly IMergeLogger _structuredLogger;
-        private readonly string _header = nameof(WordsDocumentMergerHandler);
+        private readonly IMergeLogger _mergeLogger;
+        private const string Header = nameof(WordsDocumentMergerHandler);
 
         public WordsDocumentMergerHandler(
             IOrganizationService service,
@@ -43,7 +43,7 @@ namespace WordMerge
             _annotationMainWordFile = annotationMainWordFile ?? throw new ArgumentNullException(nameof(annotationMainWordFile));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _fileDownloader = fileDownloader ?? new FileDownloader(service);
-            _structuredLogger = MergeLoggerFactory.Create(logger);
+            _mergeLogger = MergeLoggerFactory.Create(logger);
         }
 
         #region Public API
@@ -54,24 +54,24 @@ namespace WordMerge
         public MergeResult MergeConfiguredFiles()
         {
             var errors = new List<string>();
-            _structuredLogger.Log(MergeLogSeverity.Info, $"{_header} - {Logs.Start}");
+            _mergeLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.Start}");
 
             if (_configuration.Count == 0)
             {
-                errors.Add("Configuration list is empty.");
+                _mergeLogger.LogError(Errors.ConfigListEmpty, errors);
                 return MergeResult.Fail(errors);
             }
 
             if (!_annotationMainWordFile.Contains(Annotation.AnnotationDocumentBody))
             {
-                errors.Add("Main annotation entity missing documentbody attribute.");
+                _mergeLogger.LogError(Errors.MainAnnotationMissingDocBodyAttribute, errors);
                 return MergeResult.Fail(errors);
             }
 
             var mainBase64 = _annotationMainWordFile.GetAttributeValue<string>(Annotation.AnnotationDocumentBody);
             if (string.IsNullOrWhiteSpace(mainBase64))
             {
-                errors.Add("Main annotation documentbody is empty.");
+                _mergeLogger.LogError(Errors.MainAnnotationBodyEmpty, errors);
                 return MergeResult.Fail(errors);
             }
 
@@ -82,7 +82,7 @@ namespace WordMerge
             }
             catch (FormatException fe)
             {
-                errors.Add($"Main annotation documentbody is not valid Base64: {fe.Message}");
+                _mergeLogger.LogError(string.Format(Errors.MainAnnotationBodyNotValidBase64, fe.Message), errors);
                 return MergeResult.Fail(errors);
             }
 
@@ -91,18 +91,18 @@ namespace WordMerge
             {
                 if (!_sourceEntityDocumentToInject.Contains(cfg.Left) || _sourceEntityDocumentToInject[cfg.Left] == null)
                 {
-                    errors.Add($"File attribute '{cfg.Left}' missing on source entity.");
+                    _mergeLogger.LogError(string.Format(Errors.FileFieldMissing, cfg.Left), errors);
                     continue;
                 }
 
-                var bytes = _fileDownloader.DownloadFile(m => _structuredLogger.Log(MergeLogSeverity.Warning, m),
+                var bytes = _fileDownloader.DownloadFile(m => _mergeLogger.Log(MergeLogSeverity.Warning, m),
                     _sourceEntityDocumentToInject.ToEntityReference(),
                     cfg.Left,
                     out var isExcel);
 
                 if (bytes == null)
                 {
-                    errors.Add($"File missing or download failed for field '{cfg.Left}'.");
+                    _mergeLogger.LogError(string.Format(Errors.FileFieldEmptyOrErrorDownloading, cfg.Left), errors);
                     continue;
                 }
 
@@ -120,7 +120,7 @@ namespace WordMerge
             }
             catch (Exception ex)
             {
-                errors.Add($"Unexpected merge failure: {ex.Message}");
+                _mergeLogger.LogError(string.Format(Errors.UnexpectedErrorDuringMerge, ex.Message), errors);
             }
 
             if (errors.Count > 0)
@@ -129,7 +129,7 @@ namespace WordMerge
             var cloned = _annotationMainWordFile.CloneEmpty();
             cloned[Annotation.AnnotationDocumentBody] = Convert.ToBase64String(mainBytes);
 
-            _structuredLogger.Log(MergeLogSeverity.Info, $"{_header} - {Logs.End}");
+            _mergeLogger.Log(MergeLogSeverity.Info, $"{Header} - {Logs.End}");
             return MergeResult.Ok(cloned);
         }
 
@@ -146,7 +146,7 @@ namespace WordMerge
         #endregion
 
         #region Core Merge Logic
-        private static byte[] ApplyAllMergesInSingleSession(
+        private byte[] ApplyAllMergesInSingleSession(
             byte[] mainBytes,
             List<(Couple<string, string> Config, byte[] Bytes, bool IsExcel)> files,
             List<string> errors)
@@ -164,20 +164,20 @@ namespace WordMerge
                     {
                         if (string.IsNullOrWhiteSpace(placeholderToken))
                         {
-                            errors.Add($"Empty placeholder for field '{left}'.");
+                            _mergeLogger.LogError(string.Format(Errors.EmptyPlaceholder, left), errors);
                             continue;
                         }
 
                         var paragraph = WordsMergerHelper.FindPlaceholderParagraph(body, placeholderToken);
                         if (paragraph == null)
                         {
-                            errors.Add($"Placeholder '{placeholderToken}' not found in main document.");
+                            _mergeLogger.LogError(string.Format(Errors.PlaceholderNotFoundInMainDocument, placeholderToken), errors);
                             continue;
                         }
 
                         if (!(paragraph.Parent is Body parentBody))
                         {
-                            errors.Add($"Placeholder '{placeholderToken}' not inside document body.");
+                            _mergeLogger.LogError(string.Format(Errors.PlaceholderNotFoundInMainDocumentBody, placeholderToken), errors);
                             continue;
                         }
 

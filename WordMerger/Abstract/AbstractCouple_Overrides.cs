@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using WordMerge.Constant;
 using WordMerge.Core;
 
 namespace WordMerge.Abstract
@@ -40,7 +41,7 @@ namespace WordMerge.Abstract
             if (obj is ICouple<TLeft, TRight> other)
                 return CompareTo(other);
 
-            throw new ArgumentException("Object is not a compatible ICouple", nameof(obj));
+            throw new ArgumentException(Errors.CoupleNotCompatibleError, nameof(obj));
         }
 
         public int CompareTo(ICouple<TLeft, TRight> other)
@@ -108,7 +109,7 @@ namespace WordMerge.Abstract
                 return 0;
 
             if (!(other is ICouple<TLeft, TRight> couple))
-                throw new ArgumentException("Object is not a compatible ICouple", nameof(other));
+                throw new ArgumentException(Errors.CoupleNotCompatibleError, nameof(other));
 
             var leftCompare = comparer.Compare(Left, couple.Left);
             return leftCompare != 0
